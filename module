@@ -2,11 +2,13 @@ local module = {}
 
 function module.CreateGui(parent)
 	local gui = Instance.new("ScreenGui", parent)
+	gui.Name = "MainGui"
 	return gui
 end
 
 function module.createGlobalFrame(parent, sizexy, yesforcorner, cornerradius, isdraggable, sizeofbuttonsscrollingframeX)
 	local frame = Instance.new("Frame", parent)
+	frame.Name = "MainFrame"
 	frame.Size = sizexy
 	if yesforcorner == true then
 		Instance.new("UICorner", frame).CornerRadius = cornerradius
@@ -15,12 +17,14 @@ function module.createGlobalFrame(parent, sizexy, yesforcorner, cornerradius, is
 		Instance.new("UIDragDetector", frame)
 	end
 	local buttonsframe = Instance.new("ScrollingFrame", frame)
+	buttonsframe.Name = "buttonsframe"
 	buttonsframe.Size = UDim2.new(sizeofbuttonsscrollingframeX, 0, 0.98, 0)
 	buttonsframe.Position = UDim2.new(sizeofbuttonsscrollingframeX/2, 0, 0.5, 0)
 	buttonsframe.AnchorPoint = Vector2.new(0.5, 0.5)
 	buttonsframe.BackgroundTransparency = 1
 	Instance.new("UICorner", buttonsframe).CornerRadius = cornerradius
 	local functionsframe = Instance.new("ScrollingFrame", frame)
+	functionsframe.Name = "functionsframe"
 	functionsframe.Size = UDim2.new(1 - sizeofbuttonsscrollingframeX, 0, 0.98, 0)
 	functionsframe.AnchorPoint = Vector2.new(0, 0.5)
 	functionsframe.Position = UDim2.new(sizeofbuttonsscrollingframeX , 0, 0.5, 0)
