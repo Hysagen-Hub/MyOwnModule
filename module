@@ -1,41 +1,54 @@
 local module = {}
 
+local cornerradiusformain = UDim.new(0.05, 0)
+local cornerradiusforbutton = UDim.new(0.25, 0)
+
 function module.CreateGui(parent)
 	local gui = Instance.new("ScreenGui", parent)
 	gui.Name = "MainGui"
 	return gui
 end
 
-function module.createGlobalFrame(parent, sizexy, yesforcorner, cornerradius, isdraggable, sizeofbuttonsscrollingframeX)
+function module.createGlobalFrame(parent, isdraggable, sizeofbuttonsscrollingframeX)
 	local frame = Instance.new("Frame", parent)
 	frame.Name = "MainFrame"
-	frame.Size = sizexy
-	if yesforcorner == true then
-		Instance.new("UICorner", frame).CornerRadius = cornerradius
-	end
+	frame.Size = UDim2.new(0.3, 0, 0.5, 0)
+	local podframe = Instance.new("Frame", frame)
+	podframe.Name = "PodFrame"
+	podframe.Size = UDim2.new(1, 0, 0.06, 0)
+	podframe.BackgroundColor3 = Color3.fromRGB(149, 149, 149)
+	Instance.new("UICorner", podframe).CornerRadius = UDim.new(1, 0)
+	Instance.new("UICorner", frame).CornerRadius = cornerradiusformain
 	if isdraggable == true then
 		Instance.new("UIDragDetector", frame)
 	end
 	local buttonspageframe = Instance.new("ScrollingFrame", frame)
 	buttonspageframe.Name = "buttonspageframe"
-	buttonspageframe.Size = UDim2.new(sizeofbuttonsscrollingframeX, 0, 0.98, 0)
-	buttonspageframe.Position = UDim2.new(sizeofbuttonsscrollingframeX/2, 0, 0.5, 0)
+	buttonspageframe.Size = UDim2.new(sizeofbuttonsscrollingframeX, 0, 0.91, 0)
+	buttonspageframe.Position = UDim2.new(sizeofbuttonsscrollingframeX/2, 0, 0.52, 0)
 	buttonspageframe.AnchorPoint = Vector2.new(0.5, 0.5)
 	buttonspageframe.BackgroundTransparency = 1
-	Instance.new("UICorner", buttonspageframe).CornerRadius = cornerradius
+	buttonspageframe.ScrollBarImageTransparency = 1
+	Instance.new("UICorner", buttonspageframe).CornerRadius = cornerradiusformain
 	local functionsframe = Instance.new("ScrollingFrame", frame)
 	functionsframe.Name = "functionsframe"
-	functionsframe.Size = UDim2.new(1 - sizeofbuttonsscrollingframeX, 0, 0.98, 0)
+	functionsframe.Size = UDim2.new(1 - sizeofbuttonsscrollingframeX, 0, 0.91, 0)
 	functionsframe.AnchorPoint = Vector2.new(0, 0.5)
-	functionsframe.Position = UDim2.new(sizeofbuttonsscrollingframeX , 0, 0.5, 0)
-	Instance.new("UICorner", functionsframe).CornerRadius = cornerradius
+	functionsframe.Position = UDim2.new(sizeofbuttonsscrollingframeX , 0, 0.52, 0)
+	functionsframe.ScrollBarImageTransparency = 1
+	functionsframe.BackgroundTransparency = 1
+	Instance.new("UICorner", functionsframe).CornerRadius = cornerradiusformain
 	return frame, buttonspageframe, functionsframe
 end
 
-function module.addbuttonpage(parent)
+function module.addbuttonpage(parent, uppos, sizey, sizex)
 	local button = Instance.new("TextButton", parent)
-	button.Size = UDim2.new(parent.Size.X, 0, 0.1, 0)
-	button.Position = UDim2.new(0, 0, 0.1, 0)
+	button.Size = UDim2.new(0.9, 0, sizey, 0)
+	button.AnchorPoint = Vector2.new(0.55, 0)
+	button.Position = UDim2.new(0.5, 0, uppos, 0)
+	Instance.new("UICorner", button).CornerRadius = cornerradiusforbutton
+	return button
 end
+
 
 return module
