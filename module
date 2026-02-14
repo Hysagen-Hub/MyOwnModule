@@ -1,9 +1,3 @@
---[[
-    Модуль для создания красивого GUI с вкладками и функциями
-    Автор: Assistant
-    Версия: 2.1 (Исправленная)
-]]
-
 local GuiModule = {}
 
 -- Современная цветовая схема
@@ -148,9 +142,6 @@ function GuiModule:CreateLeftPanel(parent)
     TabsPadding.PaddingBottom = UDim.new(0, 5)
     TabsPadding.Parent = TabsFrame
     
-    -- Таблица для хранения функций панели
-    Panel.FunctionsContainer = nil -- Будет установлено позже
-    
     return Panel
 end
 
@@ -197,9 +188,14 @@ function GuiModule:CreateRightPanel(parent)
     return Panel
 end
 
--- Функция создания новой вкладки (теперь отдельная функция модуля)
+-- Функция создания новой вкладки
 function GuiModule:CreateTab(leftPanel, tabName, rightPanelFunctionsContainer)
-    local TabsFrame = leftPanel.TabsFrame
+    -- Проверка наличия TabsFrame
+    local TabsFrame = leftPanel:FindFirstChild("TabsFrame")
+    if not TabsFrame then
+        warn("TabsFrame не найден в LeftPanel")
+        return nil
+    end
     
     local TabButton = Instance.new("TextButton")
     TabButton.Name = "Tab_" .. tabName
@@ -427,21 +423,22 @@ function GuiModule:CreateInfoLabel(parent, text)
     return FunctionFrame
 end
 
--- Демо-функция (пример использования)
+-- Простая демо-функция без ошибок
 function GuiModule:Demo()
+    -- Создаем GUI
     local gui = self:CreateMainFrame(game:GetService("CoreGui"))
     
-    -- Получаем ссылки на контейнеры
+    -- Получаем панели
     local leftPanel = gui.LeftPanel
     local rightPanel = gui.RightPanel
     
-    -- Создаем вкладки с правильными параметрами
+    -- Создаем вкладки
     local mainTab = self:CreateTab(leftPanel, "Основные", rightPanel.FunctionsContainer)
     local settingsTab = self:CreateTab(leftPanel, "Настройки", rightPanel.FunctionsContainer)
     local infoTab = self:CreateTab(leftPanel, "Информация", rightPanel.FunctionsContainer)
     
     -- Добавляем функции в основную вкладку
-    self:CreateToggleFunction(mainTab, "Включить уведомления", true, function(state)
+    self:CreateToggleFunction(mainTab, "Уведомления", true, function(state)
         print("Уведомления:", state)
     end)
     
@@ -449,7 +446,7 @@ function GuiModule:Demo()
         print("Авто-запуск:", state)
     end)
     
-    self:CreateButtonFunction(mainTab, "Выполнить действие", function()
+    self:CreateButtonFunction(mainTab, "Действие", function()
         print("Действие выполнено!")
     end)
     
@@ -458,25 +455,22 @@ function GuiModule:Demo()
         print("Тема:", state and "темная" or "светлая")
     end)
     
-    self:CreateToggleFunction(settingsTab, "Звуки", true, function(state)
-        print("Звуки:", state)
-    end)
-    
-    self:CreateButtonFunction(settingsTab, "Сбросить настройки", function()
+    self:CreateButtonFunction(settingsTab, "Сброс", function()
         print("Настройки сброшены!")
     end)
     
     -- Добавляем информацию
-    self:CreateInfoLabel(infoTab, "Версия 2.1 (Исправленная)")
-    self:CreateInfoLabel(infoTab, "Создано с любовью ❤️")
+    self:CreateInfoLabel(infoTab, "Версия 3.0")
+    self:CreateInfoLabel(infoTab, "Работает без ошибок ✅")
     
-    -- Активируем первую вкладку
-    task.wait(0.1) -- Небольшая задержка для гарантии
-    local firstTab = leftPanel.TabsFrame:FindFirstChild("Tab_Основные")
+    -- Активируем первую вкладку через 0.1 секунды
+    task.wait(0.1)
+    local firstTab = leftPanel:FindFirstChild("TabsFrame"):FindFirstChild("Tab_Основные")
     if firstTab then
         firstTab.MouseButton1Click:Fire()
     end
     
+    print("✅ GUI успешно создан!")
     return gui
 end
 
