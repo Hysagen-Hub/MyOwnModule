@@ -1,12 +1,5 @@
---[[
-    Модуль для создания красивого GUI с вкладками и функциями
-    Автор: Assistant
-    Версия: 2.0
-]]
-
 local GuiModule = {}
 
--- Современная цветовая схема
 local Colors = {
     Background = Color3.fromRGB(18, 18, 22),
     Secondary = Color3.fromRGB(28, 28, 35),
