@@ -48,6 +48,9 @@ function GuiModule.new(settings)
 	mainFrame.BackgroundTransparency = 0.1
 	mainFrame.BorderSizePixel = 0
 	mainFrame.ClipsDescendants = true
+	mainFrame.Name = "MainGUI"
+	mainFrame.Active = true
+	mainFrame.Draggable = false -- Будем делать свое перетаскивание
 	
 	-- Создаем UI Corner
 	local corner = Instance.new("UICorner")
@@ -67,6 +70,7 @@ function GuiModule.new(settings)
 	leftPanel.BackgroundColor3 = settings.SecondaryColor
 	leftPanel.BackgroundTransparency = 0.2
 	leftPanel.BorderSizePixel = 0
+	leftPanel.Name = "LeftPanel"
 	leftPanel.Parent = mainFrame
 	
 	-- Левый скроллинг фрейм для вкладок
@@ -78,6 +82,8 @@ function GuiModule.new(settings)
 	tabsScrollingFrame.ScrollBarThickness = 4
 	tabsScrollingFrame.ScrollBarImageColor3 = settings.AccentColor
 	tabsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	tabsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabsScrollingFrame.Name = "TabsScrollingFrame"
 	tabsScrollingFrame.Parent = leftPanel
 	
 	local tabsLayout = Instance.new("UIListLayout")
@@ -92,6 +98,7 @@ function GuiModule.new(settings)
 	rightPanel.Position = UDim2.new(0, 150, 0, 0)
 	rightPanel.BackgroundTransparency = 1
 	rightPanel.BorderSizePixel = 0
+	rightPanel.Name = "RightPanel"
 	rightPanel.Parent = mainFrame
 	
 	-- Правый скроллинг фрейм для функций
@@ -103,6 +110,8 @@ function GuiModule.new(settings)
 	functionsScrollingFrame.ScrollBarThickness = 4
 	functionsScrollingFrame.ScrollBarImageColor3 = settings.AccentColor
 	functionsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	functionsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	functionsScrollingFrame.Name = "FunctionsScrollingFrame"
 	functionsScrollingFrame.Parent = rightPanel
 	
 	local functionsLayout = Instance.new("UIListLayout")
@@ -110,6 +119,25 @@ function GuiModule.new(settings)
 	functionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	functionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	functionsLayout.Parent = functionsScrollingFrame
+	
+	-- Автоматическое обновление CanvasSize
+	local function updateCanvasSize(frame, layout)
+		local contentHeight = 0
+		for _, child in pairs(frame:GetChildren()) do
+			if child:IsA("Frame") or child:IsA("TextButton") then
+				contentHeight = contentHeight + child.AbsoluteSize.Y + 5
+			end
+		end
+		frame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+	end
+	
+	tabsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		updateCanvasSize(tabsScrollingFrame, tabsLayout)
+	end)
+	
+	functionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		updateCanvasSize(functionsScrollingFrame, functionsLayout)
+	end)
 	
 	-- Данные для хранения вкладок
 	local tabsData = {}
@@ -143,6 +171,7 @@ function GuiModule.new(settings)
 		tabButton.TextSize = settings.TextSize
 		tabButton.BorderSizePixel = 0
 		tabButton.AutoButtonColor = false
+		tabButton.Name = tabName .. "Button"
 		
 		local buttonCorner = Instance.new("UICorner")
 		buttonCorner.CornerRadius = UDim.new(0, 6)
@@ -194,6 +223,7 @@ function GuiModule.new(settings)
 		functionFrame.BackgroundColor3 = settings.SecondaryColor
 		functionFrame.BackgroundTransparency = 0.3
 		functionFrame.BorderSizePixel = 0
+		functionFrame.Name = funcName .. "Frame"
 		
 		local frameCorner = Instance.new("UICorner")
 		frameCorner.CornerRadius = UDim.new(0, 6)
@@ -208,6 +238,7 @@ function GuiModule.new(settings)
 		textLabel.Font = settings.Font
 		textLabel.TextSize = settings.TextSize
 		textLabel.TextXAlignment = Enum.TextXAlignment.Left
+		textLabel.Name = "FunctionLabel"
 		textLabel.Parent = functionFrame
 		
 		local button = Instance.new("TextButton")
@@ -220,6 +251,7 @@ function GuiModule.new(settings)
 		button.TextSize = settings.TextSize
 		button.BorderSizePixel = 0
 		button.AutoButtonColor = false
+		button.Name = "ExecuteButton"
 		
 		local buttonCorner = Instance.new("UICorner")
 		buttonCorner.CornerRadius = UDim.new(0, 6)
@@ -241,7 +273,10 @@ function GuiModule.new(settings)
 		-- Обработка нажатия кнопки
 		button.MouseButton1Click:Connect(function()
 			if callback then
-				pcall(callback)
+				local success, err = pcall(callback)
+				if not success then
+					warn("Ошибка в функции '" .. funcName .. "': " .. tostring(err))
+				end
 			end
 		end)
 		
@@ -255,6 +290,11 @@ function GuiModule.new(settings)
 	
 	-- Создание новой вкладки
 	function mainFrame:CreateTab(tabName)
+		if not tabName or type(tabName) ~= "string" then
+			warn("Имя вкладки должно быть строкой!")
+			return nil
+		end
+		
 		if tabsData[tabName] then
 			warn("Вкладка с именем '" .. tabName .. "' уже существует!")
 			return nil
@@ -269,8 +309,10 @@ function GuiModule.new(settings)
 		}
 		
 		-- Если это первая вкладка, автоматически выбираем её
-		if next(tabsData) == tabsData[tabName] and not currentTab then
-			tabButton.MouseButton1Click:Fire()
+		if not currentTab then
+			currentTab = tabName
+			tabButton.BackgroundColor3 = settings.AccentColor
+			updateFunctionsDisplay()
 		end
 		
 		return tabsData[tabName]
@@ -278,14 +320,19 @@ function GuiModule.new(settings)
 	
 	-- Добавление функции во вкладку
 	function mainFrame:AddFunction(tabName, funcName, callback)
-		if not tabsData[tabName] then
-			warn("Вкладка '" .. tabName .. "' не найдена!")
+		if not tabName or not tabsData[tabName] then
+			warn("Вкладка '" .. tostring(tabName) .. "' не найдена!")
+			return false
+		end
+		
+		if not funcName or type(funcName) ~= "string" then
+			warn("Имя функции должно быть строкой!")
 			return false
 		end
 		
 		table.insert(tabsData[tabName].functions, {
 			name = funcName,
-			callback = callback
+			callback = callback or function() end
 		})
 		
 		-- Если это текущая вкладка, обновляем отображение
@@ -306,8 +353,10 @@ function GuiModule.new(settings)
 				currentTab = nil
 				-- Выбираем первую доступную вкладку
 				for name, _ in pairs(tabsData) do
-					tabsData[name].button.MouseButton1Click:Fire()
-					break
+					if tabsData[name].button then
+						tabsData[name].button.MouseButton1Click:Fire()
+						break
+					end
 				end
 			end
 		end
