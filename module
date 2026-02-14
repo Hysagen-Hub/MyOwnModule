@@ -1,5 +1,12 @@
+--[[
+    Модуль для создания красивого GUI с вкладками и функциями
+    Автор: Assistant
+    Версия: 2.1 (Исправленная)
+]]
+
 local GuiModule = {}
 
+-- Современная цветовая схема
 local Colors = {
     Background = Color3.fromRGB(18, 18, 22),
     Secondary = Color3.fromRGB(28, 28, 35),
@@ -25,6 +32,8 @@ local Styles = {
 
 -- Основная функция создания GUI
 function GuiModule:CreateMainFrame(parent)
+    parent = parent or game:GetService("CoreGui")
+    
     -- ОСНОВНОЙ КОНТЕЙНЕР
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainGUI"
@@ -32,7 +41,7 @@ function GuiModule:CreateMainFrame(parent)
     MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
-    MainFrame.Parent = parent or game:GetService("CoreGui")
+    MainFrame.Parent = parent
     
     -- Сглаженные углы
     local MainCorner = Instance.new("UICorner")
@@ -139,86 +148,8 @@ function GuiModule:CreateLeftPanel(parent)
     TabsPadding.PaddingBottom = UDim.new(0, 5)
     TabsPadding.Parent = TabsFrame
     
-    -- Функция создания новой вкладки
-    function Panel:CreateTab(name)
-        local TabButton = Instance.new("TextButton")
-        TabButton.Name = "Tab_" .. name
-        TabButton.Size = UDim2.new(1, -10, 0, 40)
-        TabButton.BackgroundColor3 = Colors.Tertiary
-        TabButton.BorderSizePixel = 0
-        TabButton.Text = "  " .. name
-        TabButton.TextColor3 = Colors.TextSecondary
-        TabButton.Font = Styles.Font
-        TabButton.TextSize = 14
-        TabButton.TextXAlignment = Enum.TextXAlignment.Left
-        TabButton.Parent = TabsFrame
-        
-        -- Скругление
-        local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = Styles.SmallCorner
-        TabCorner.Parent = TabButton
-        
-        -- Иконка (можно заменить на свою)
-        local Icon = Instance.new("TextLabel")
-        Icon.Name = "Icon"
-        Icon.Size = UDim2.new(0, 30, 1, 0)
-        Icon.BackgroundTransparency = 1
-        Icon.Text = "📌"
-        Icon.TextColor3 = Colors.Accent
-        Icon.Font = Enum.Font.Gotham
-        Icon.TextSize = 16
-        Icon.Parent = TabButton
-        
-        -- Контейнер для функций этой вкладки
-        local FunctionsContainer = Instance.new("ScrollingFrame")
-        FunctionsContainer.Name = "Functions_" .. name
-        FunctionsContainer.Size = UDim2.new(1, 0, 1, 0)
-        FunctionsContainer.BackgroundTransparency = 1
-        FunctionsContainer.BorderSizePixel = 0
-        FunctionsContainer.ScrollBarThickness = 4
-        FunctionsContainer.ScrollBarImageColor3 = Colors.Accent
-        FunctionsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-        FunctionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        FunctionsContainer.Visible = false
-        FunctionsContainer.Parent = Panel.Parent.Parent.RightPanel.FunctionsContainer
-        
-        -- Layout для функций
-        local FunctionsLayout = Instance.new("UIListLayout")
-        FunctionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        FunctionsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-        FunctionsLayout.Padding = UDim.new(0, 8)
-        FunctionsLayout.Parent = FunctionsContainer
-        
-        local FunctionsPadding = Instance.new("UIPadding")
-        FunctionsPadding.PaddingTop = UDim.new(0, 10)
-        FunctionsPadding.PaddingBottom = UDim.new(0, 10)
-        FunctionsPadding.Parent = FunctionsContainer
-        
-        -- При клике на вкладку
-        TabButton.MouseButton1Click:Connect(function()
-            -- Скрываем все функции
-            for _, child in pairs(Panel.Parent.Parent.RightPanel.FunctionsContainer:GetChildren()) do
-                if child:IsA("ScrollingFrame") then
-                    child.Visible = false
-                end
-            end
-            
-            -- Показываем функции выбранной вкладки
-            FunctionsContainer.Visible = true
-            
-            -- Обновляем цвета кнопок
-            for _, btn in pairs(TabsFrame:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    btn.BackgroundColor3 = Colors.Tertiary
-                    btn.TextColor3 = Colors.TextSecondary
-                end
-            end
-            TabButton.BackgroundColor3 = Colors.Accent
-            TabButton.TextColor3 = Colors.Text
-        end)
-        
-        return FunctionsContainer
-    end
+    -- Таблица для хранения функций панели
+    Panel.FunctionsContainer = nil -- Будет установлено позже
     
     return Panel
 end
@@ -264,6 +195,89 @@ function GuiModule:CreateRightPanel(parent)
     Panel.FunctionsContainer = FunctionsContainer
     
     return Panel
+end
+
+-- Функция создания новой вкладки (теперь отдельная функция модуля)
+function GuiModule:CreateTab(leftPanel, tabName, rightPanelFunctionsContainer)
+    local TabsFrame = leftPanel.TabsFrame
+    
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = "Tab_" .. tabName
+    TabButton.Size = UDim2.new(1, -10, 0, 40)
+    TabButton.BackgroundColor3 = Colors.Tertiary
+    TabButton.BorderSizePixel = 0
+    TabButton.Text = "  " .. tabName
+    TabButton.TextColor3 = Colors.TextSecondary
+    TabButton.Font = Styles.Font
+    TabButton.TextSize = 14
+    TabButton.TextXAlignment = Enum.TextXAlignment.Left
+    TabButton.Parent = TabsFrame
+    
+    -- Скругление
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = Styles.SmallCorner
+    TabCorner.Parent = TabButton
+    
+    -- Иконка
+    local Icon = Instance.new("TextLabel")
+    Icon.Name = "Icon"
+    Icon.Size = UDim2.new(0, 30, 1, 0)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = "📌"
+    Icon.TextColor3 = Colors.Accent
+    Icon.Font = Enum.Font.Gotham
+    Icon.TextSize = 16
+    Icon.Parent = TabButton
+    
+    -- Контейнер для функций этой вкладки
+    local FunctionsContainer = Instance.new("ScrollingFrame")
+    FunctionsContainer.Name = "Functions_" .. tabName
+    FunctionsContainer.Size = UDim2.new(1, 0, 1, 0)
+    FunctionsContainer.BackgroundTransparency = 1
+    FunctionsContainer.BorderSizePixel = 0
+    FunctionsContainer.ScrollBarThickness = 4
+    FunctionsContainer.ScrollBarImageColor3 = Colors.Accent
+    FunctionsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    FunctionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    FunctionsContainer.Visible = false
+    FunctionsContainer.Parent = rightPanelFunctionsContainer
+    
+    -- Layout для функций
+    local FunctionsLayout = Instance.new("UIListLayout")
+    FunctionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    FunctionsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    FunctionsLayout.Padding = UDim.new(0, 8)
+    FunctionsLayout.Parent = FunctionsContainer
+    
+    local FunctionsPadding = Instance.new("UIPadding")
+    FunctionsPadding.PaddingTop = UDim.new(0, 10)
+    FunctionsPadding.PaddingBottom = UDim.new(0, 10)
+    FunctionsPadding.Parent = FunctionsContainer
+    
+    -- При клике на вкладку
+    TabButton.MouseButton1Click:Connect(function()
+        -- Скрываем все функции
+        for _, child in pairs(rightPanelFunctionsContainer:GetChildren()) do
+            if child:IsA("ScrollingFrame") then
+                child.Visible = false
+            end
+        end
+        
+        -- Показываем функции выбранной вкладки
+        FunctionsContainer.Visible = true
+        
+        -- Обновляем цвета кнопок
+        for _, btn in pairs(TabsFrame:GetChildren()) do
+            if btn:IsA("TextButton") then
+                btn.BackgroundColor3 = Colors.Tertiary
+                btn.TextColor3 = Colors.TextSecondary
+            end
+        end
+        TabButton.BackgroundColor3 = Colors.Accent
+        TabButton.TextColor3 = Colors.Text
+    end)
+    
+    return FunctionsContainer
 end
 
 -- Функция создания текста с кнопкой ON/OFF
@@ -385,7 +399,7 @@ function GuiModule:CreateButtonFunction(parent, text, callback)
         
         -- Анимация нажатия
         ActionButton:TweenSize(UDim2.new(0, 45, 0, 25), "Out", "Quad", 0.1)
-        wait(0.1)
+        task.wait(0.1)
         ActionButton:TweenSize(UDim2.new(0, 50, 0, 30), "Out", "Quad", 0.1)
     end)
     
@@ -413,14 +427,18 @@ function GuiModule:CreateInfoLabel(parent, text)
     return FunctionFrame
 end
 
--- Пример использования
+-- Демо-функция (пример использования)
 function GuiModule:Demo()
     local gui = self:CreateMainFrame(game:GetService("CoreGui"))
     
-    -- Создаем вкладки
-    local mainTab = gui.LeftPanel:CreateTab("Основные")
-    local settingsTab = gui.LeftPanel:CreateTab("Настройки")
-    local infoTab = gui.LeftPanel:CreateTab("Информация")
+    -- Получаем ссылки на контейнеры
+    local leftPanel = gui.LeftPanel
+    local rightPanel = gui.RightPanel
+    
+    -- Создаем вкладки с правильными параметрами
+    local mainTab = self:CreateTab(leftPanel, "Основные", rightPanel.FunctionsContainer)
+    local settingsTab = self:CreateTab(leftPanel, "Настройки", rightPanel.FunctionsContainer)
+    local infoTab = self:CreateTab(leftPanel, "Информация", rightPanel.FunctionsContainer)
     
     -- Добавляем функции в основную вкладку
     self:CreateToggleFunction(mainTab, "Включить уведомления", true, function(state)
@@ -449,11 +467,12 @@ function GuiModule:Demo()
     end)
     
     -- Добавляем информацию
-    self:CreateInfoLabel(infoTab, "Версия 2.0")
+    self:CreateInfoLabel(infoTab, "Версия 2.1 (Исправленная)")
     self:CreateInfoLabel(infoTab, "Создано с любовью ❤️")
     
     -- Активируем первую вкладку
-    local firstTab = gui.LeftPanel.TabsFrame:FindFirstChild("Tab_Основные")
+    task.wait(0.1) -- Небольшая задержка для гарантии
+    local firstTab = leftPanel.TabsFrame:FindFirstChild("Tab_Основные")
     if firstTab then
         firstTab.MouseButton1Click:Fire()
     end
