@@ -15,6 +15,9 @@ local THEME = {
 
 -- Функция для создания основного GUI
 function GuiCreator:CreateMainGUI(parent)
+    -- Проверяем, что parent существует
+    parent = parent or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    
     -- Создаем основной Frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainGUI"
@@ -22,7 +25,7 @@ function GuiCreator:CreateMainGUI(parent)
     mainFrame.Position = UDim2.new(0.5, -400, 0.5, -250)
     mainFrame.BackgroundColor3 = THEME.Background
     mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = parent or game:GetService("Players").LocalPlayer.PlayerGui
+    mainFrame.Parent = parent
     
     -- Делаем красивые скругленные углы
     local UICorner = Instance.new("UICorner")
@@ -39,7 +42,7 @@ function GuiCreator:CreateMainGUI(parent)
     shadow.ImageColor3 = Color3.new(0, 0, 0)
     shadow.ImageTransparency = 0.5
     shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 10, 10)
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
     shadow.Parent = mainFrame
     
     -- Левая панель с вкладками
@@ -148,6 +151,11 @@ end
 
 -- Функция создания вкладки
 function GuiCreator:CreateTab(mainFrame, tabName)
+    if not mainFrame or not mainFrame.TabsScrolling then
+        warn("Ошибка: mainFrame не содержит TabsScrolling")
+        return nil
+    end
+    
     local tabFrame = Instance.new("Frame")
     tabFrame.Name = tabName .. "Tab"
     tabFrame.Size = UDim2.new(1, -10, 0, 40)
@@ -227,11 +235,18 @@ end
 
 -- Функция выбора вкладки
 function GuiCreator:SelectTab(mainFrame, tabFrame)
+    if not mainFrame or not tabFrame then
+        warn("Ошибка: mainFrame или tabFrame не указаны")
+        return
+    end
+    
     -- Деактивируем все вкладки
     for _, tab in pairs(mainFrame.Tabs) do
-        tab.BackgroundColor3 = THEME.TabInactive
-        if tab.ActiveIndicator then
-            tab.ActiveIndicator.Visible = false
+        if tab and tab:IsA("Frame") then
+            tab.BackgroundColor3 = THEME.TabInactive
+            if tab.ActiveIndicator then
+                tab.ActiveIndicator.Visible = false
+            end
         end
     end
     
@@ -248,15 +263,20 @@ function GuiCreator:SelectTab(mainFrame, tabFrame)
     
     -- Обновляем заголовок
     local tabLabel = tabFrame:FindFirstChild("TabName")
-    if tabLabel then
+    if tabLabel and mainFrame.RightTitle then
         mainFrame.RightTitle.Text = tabLabel.Text:upper() .. " - ФУНКЦИИ"
     end
 end
 
 -- Функция создания функции (TextLabel + кнопка)
 function GuiCreator:CreateFunction(mainFrame, functionName, callback)
-    if not mainFrame.CurrentTab then
+    if not mainFrame or not mainFrame.CurrentTab then
         warn("Сначала выберите вкладку!")
+        return nil
+    end
+    
+    if not mainFrame.FunctionsScrolling then
+        warn("Ошибка: mainFrame не содержит FunctionsScrolling")
         return nil
     end
     
@@ -315,7 +335,10 @@ function GuiCreator:CreateFunction(mainFrame, functionName, callback)
     -- Обработчик нажатия
     if callback then
         actionButton.MouseButton1Click:Connect(function()
-            callback()
+            local success, err = pcall(callback)
+            if not success then
+                warn("Ошибка в функции '" .. functionName .. "': " .. tostring(err))
+            end
         end)
     end
     
@@ -324,6 +347,10 @@ end
 
 -- Функция очистки функций текущей вкладки
 function GuiCreator:ClearFunctions(mainFrame)
+    if not mainFrame or not mainFrame.FunctionsScrolling then
+        return
+    end
+    
     for _, child in pairs(mainFrame.FunctionsScrolling:GetChildren()) do
         if child:IsA("Frame") and child.Name ~= "UIListLayout" then
             child:Destroy()
@@ -333,6 +360,10 @@ end
 
 -- Функция создания разделителя
 function GuiCreator:CreateSeparator(mainFrame)
+    if not mainFrame or not mainFrame.FunctionsScrolling then
+        return nil
+    end
+    
     local separator = Instance.new("Frame")
     separator.Name = "Separator"
     separator.Size = UDim2.new(1, -20, 0, 1)
