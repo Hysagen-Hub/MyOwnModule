@@ -1,359 +1,621 @@
-local GuiModule = {}
+--[[
+    SUPERIOR GUI MODULE
+    Версия: 2.0.0
+    Стиль: Neumorphism + Glassmorphism
+    Особенности: Анимации, плавность, современный дизайн
+]]
 
--- Современная цветовая схема
+local SuperiorGui = {}
+
+-- 🌈 Усовершенствованная цветовая схема с градиентами
 local Colors = {
-    Background = Color3.fromRGB(18, 18, 22),
-    Secondary = Color3.fromRGB(28, 28, 35),
-    Tertiary = Color3.fromRGB(38, 38, 45),
-    Accent = Color3.fromRGB(100, 120, 255),
-    AccentLight = Color3.fromRGB(120, 140, 255),
+    Background = Color3.fromRGB(10, 10, 15),
+    Secondary = Color3.fromRGB(20, 20, 30),
+    Tertiary = Color3.fromRGB(30, 30, 40),
+    Accent = Color3.fromRGB(120, 100, 255), -- Фиолетовый акцент
+    AccentLight = Color3.fromRGB(140, 120, 255),
+    AccentGradient = {
+        Color3.fromRGB(100, 80, 255),
+        Color3.fromRGB(140, 100, 255)
+    },
     Text = Color3.fromRGB(255, 255, 255),
-    TextSecondary = Color3.fromRGB(180, 180, 190),
-    Success = Color3.fromRGB(70, 200, 120),
-    Danger = Color3.fromRGB(255, 100, 100),
-    Border = Color3.fromRGB(45, 45, 55)
+    TextSecondary = Color3.fromRGB(200, 200, 220),
+    Success = Color3.fromRGB(80, 220, 140),
+    Danger = Color3.fromRGB(255, 100, 120),
+    Warning = Color3.fromRGB(255, 180, 70),
+    Border = Color3.fromRGB(50, 50, 70),
+    Glow = Color3.fromRGB(140, 120, 255)
 }
 
--- Настройки стилей
+-- 🎨 Продвинутые стили
 local Styles = {
-    CornerRadius = UDim.new(0, 8),
-    SmallCorner = UDim.new(0, 4),
-    Padding = 10,
-    ButtonHeight = 35,
-    Font = Enum.Font.GothamSemibold,
-    SmallFont = Enum.Font.Gotham
+    CornerRadius = UDim.new(0, 16),
+    MediumCorner = UDim.new(0, 12),
+    SmallCorner = UDim.new(0, 8),
+    ButtonCorner = UDim.new(0, 25),
+    Font = Enum.Font.GothamSSm,
+    BoldFont = Enum.Font.GothamBlack,
+    MediumFont = Enum.Font.GothamMedium,
+    AnimationSpeed = 0.2,
+    ShadowSize = 30,
+    GlowIntensity = 0.3
 }
 
--- Основная функция создания GUI
-function GuiModule:CreateMainFrame(parent)
+-- 🔧 Вспомогательная функция для создания градиента
+local function createGradient(parent, colors, rotation)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new(colors)
+    gradient.Rotation = rotation or 45
+    gradient.Parent = parent
+    return gradient
+end
+
+-- 🎯 Основная функция создания GUI
+function SuperiorGui:CreateMainFrame(parent)
     parent = parent or game:GetService("CoreGui")
-    
-    -- ОСНОВНОЙ КОНТЕЙНЕР
+
+    -- Главный контейнер с эффектом стекла
     local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainGUI"
-    MainFrame.Size = UDim2.new(0, 700, 0, 500)
-    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
+    MainFrame.Name = "SuperiorGUI"
+    MainFrame.Size = UDim2.new(0, 850, 0, 600)
+    MainFrame.Position = UDim2.new(0.5, -425, 0.5, -300)
     MainFrame.BackgroundColor3 = Colors.Background
+    MainFrame.BackgroundTransparency = 0.05
     MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = false
     MainFrame.Parent = parent
+
+    -- Сложная многослойная тень
+    local function createShadowLayer(size, transparency, offset)
+        local shadow = Instance.new("ImageLabel")
+        shadow.Size = UDim2.new(1, size * 2, 1, size * 2)
+        shadow.Position = UDim2.new(0, -size, 0, -size)
+        shadow.BackgroundTransparency = 1
+        shadow.Image = "rbxassetid://6015897843"
+        shadow.ImageColor3 = Color3.new(0, 0, 0)
+        shadow.ImageTransparency = transparency
+        shadow.ScaleType = Enum.ScaleType.Slice
+        shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+        shadow.Parent = MainFrame
+    end
     
-    -- Сглаженные углы
+    createShadowLayer(25, 0.8, 0)
+    createShadowLayer(15, 0.6, 5)
+
+    -- Сглаженные углы с внутренней обводкой
     local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 12)
+    MainCorner.CornerRadius = Styles.CornerRadius
     MainCorner.Parent = MainFrame
-    
-    -- Тень
-    local Shadow = Instance.new("ImageLabel")
-    Shadow.Name = "Shadow"
-    Shadow.Size = UDim2.new(1, 40, 1, 40)
-    Shadow.Position = UDim2.new(0, -20, 0, -20)
-    Shadow.BackgroundTransparency = 1
-    Shadow.Image = "rbxassetid://6015897843"
-    Shadow.ImageColor3 = Color3.new(0, 0, 0)
-    Shadow.ImageTransparency = 0.7
-    Shadow.ScaleType = Enum.ScaleType.Slice
-    Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    Shadow.Parent = MainFrame
-    
-    -- Внутренний контейнер
+
+    -- Стильная обводка
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Colors.Border
+    Stroke.Thickness = 1.5
+    Stroke.Transparency = 0.3
+    Stroke.Parent = MainFrame
+
+    -- Внутренний контейнер с отступами
     local Container = Instance.new("Frame")
     Container.Name = "Container"
-    Container.Size = UDim2.new(1, -20, 1, -20)
-    Container.Position = UDim2.new(0, 10, 0, 10)
+    Container.Size = UDim2.new(1, -30, 1, -30)
+    Container.Position = UDim2.new(0, 15, 0, 15)
     Container.BackgroundTransparency = 1
     Container.Parent = MainFrame
-    
-    -- Создаем Layout для горизонтального расположения
+
+    -- Заголовок GUI с градиентом
+    local TitleFrame = Instance.new("Frame")
+    TitleFrame.Name = "TitleFrame"
+    TitleFrame.Size = UDim2.new(1, 0, 0, 50)
+    TitleFrame.BackgroundTransparency = 1
+    TitleFrame.Parent = Container
+
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0, 300, 1, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "✨ SUPERIOR HUB"
+    Title.TextColor3 = Colors.Text
+    Title.Font = Styles.BoldFont
+    Title.TextSize = 28
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = TitleFrame
+
+    -- Градиент для заголовка
+    local TitleGradient = Instance.new("UIGradient")
+    TitleGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Colors.AccentGradient[1]),
+        ColorSequenceKeypoint.new(1, Colors.AccentGradient[2])
+    })
+    TitleGradient.Parent = Title
+
+    -- Декоративная линия под заголовком
+    local DecorationLine = Instance.new("Frame")
+    DecorationLine.Name = "DecorationLine"
+    DecorationLine.Size = UDim2.new(1, 0, 0, 2)
+    DecorationLine.Position = UDim2.new(0, 0, 1, -2)
+    DecorationLine.BackgroundColor3 = Colors.Accent
+    DecorationLine.BorderSizePixel = 0
+    DecorationLine.Parent = TitleFrame
+
+    local LineGradient = createGradient(DecorationLine, {
+        Color3.fromRGB(120, 100, 255),
+        Color3.fromRGB(80, 200, 255),
+        Color3.fromRGB(120, 100, 255)
+    }, 90)
+
+    -- Основной layout для горизонтального расположения
     local MainLayout = Instance.new("UIListLayout")
     MainLayout.FillDirection = Enum.FillDirection.Horizontal
     MainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
     MainLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-    MainLayout.Padding = UDim.new(0, 10)
+    MainLayout.Padding = UDim.new(0, 15)
     MainLayout.Parent = Container
-    
-    -- ЛЕВАЯ ПАНЕЛЬ (Вкладки)
+
+    -- Создаем панели
     local LeftPanel = self:CreateLeftPanel(Container)
-    
-    -- ПРАВАЯ ПАНЕЛЬ (Функции)
     local RightPanel = self:CreateRightPanel(Container)
-    
+
     -- Сохраняем ссылки
     MainFrame.LeftPanel = LeftPanel
     MainFrame.RightPanel = RightPanel
     MainFrame.Tabs = {}
     MainFrame.CurrentTab = nil
-    
+
+    -- Добавляем эффект свечения при наведении
+    MainFrame.MouseEnter:Connect(function()
+        for i, v in pairs(MainFrame:GetChildren()) do
+            if v:IsA("ImageLabel") then
+                v.ImageTransparency = 0.5
+            end
+        end
+    end)
+
+    MainFrame.MouseLeave:Connect(function()
+        for i, v in pairs(MainFrame:GetChildren()) do
+            if v:IsA("ImageLabel") then
+                v.ImageTransparency = 0.8
+            end
+        end
+    end)
+
     return MainFrame
 end
 
--- Создание левой панели с вкладками
-function GuiModule:CreateLeftPanel(parent)
+-- 🎨 Левая панель (вкладки)
+function SuperiorGui:CreateLeftPanel(parent)
     local Panel = Instance.new("Frame")
     Panel.Name = "LeftPanel"
-    Panel.Size = UDim2.new(0, 200, 1, 0)
+    Panel.Size = UDim2.new(0, 220, 1, -60)
+    Panel.Position = UDim2.new(0, 0, 0, 60)
     Panel.BackgroundColor3 = Colors.Secondary
+    Panel.BackgroundTransparency = 0.1
     Panel.BorderSizePixel = 0
     Panel.Parent = parent
-    
-    -- Скругление
+
+    -- Стилизация панели
     local PanelCorner = Instance.new("UICorner")
-    PanelCorner.CornerRadius = Styles.CornerRadius
+    PanelCorner.CornerRadius = Styles.MediumCorner
     PanelCorner.Parent = Panel
-    
-    -- Заголовок
+
+    local PanelStroke = Instance.new("UIStroke")
+    PanelStroke.Color = Colors.Border
+    PanelStroke.Thickness = 1
+    PanelStroke.Transparency = 0.5
+    PanelStroke.Parent = Panel
+
+    -- Заголовок панели с иконкой
     local Header = Instance.new("TextLabel")
     Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 45)
-    Header.BackgroundColor3 = Colors.Tertiary
-    Header.BorderSizePixel = 0
-    Header.Text = "📁 ВКЛАДКИ"
-    Header.TextColor3 = Colors.Text
-    Header.Font = Styles.Font
-    Header.TextSize = 16
+    Header.Size = UDim2.new(1, -20, 0, 45)
+    Header.Position = UDim2.new(0, 10, 0, 10)
+    Header.BackgroundTransparency = 1
+    Header.Text = "📋 НАВИГАЦИЯ"
+    Header.TextColor3 = Colors.TextSecondary
+    Header.Font = Styles.MediumFont
+    Header.TextSize = 14
+    Header.TextXAlignment = Enum.TextXAlignment.Left
     Header.Parent = Panel
-    
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 8)
-    HeaderCorner.Parent = Header
-    
+
     -- ScrollingFrame для вкладок
     local TabsFrame = Instance.new("ScrollingFrame")
     TabsFrame.Name = "TabsFrame"
-    TabsFrame.Size = UDim2.new(1, -10, 1, -55)
-    TabsFrame.Position = UDim2.new(0, 5, 0, 50)
+    TabsFrame.Size = UDim2.new(1, -20, 1, -70)
+    TabsFrame.Position = UDim2.new(0, 10, 0, 60)
     TabsFrame.BackgroundTransparency = 1
     TabsFrame.BorderSizePixel = 0
-    TabsFrame.ScrollBarThickness = 4
+    TabsFrame.ScrollBarThickness = 3
     TabsFrame.ScrollBarImageColor3 = Colors.Accent
+    TabsFrame.ScrollBarImageTransparency = 0.5
     TabsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     TabsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
     TabsFrame.Parent = Panel
-    
-    -- Layout для кнопок вкладок
+
+    -- Layout для вкладок
     local TabsLayout = Instance.new("UIListLayout")
     TabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     TabsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     TabsLayout.Padding = UDim.new(0, 8)
     TabsLayout.Parent = TabsFrame
-    
-    -- Padding
-    local TabsPadding = Instance.new("UIPadding")
-    TabsPadding.PaddingTop = UDim.new(0, 5)
-    TabsPadding.PaddingBottom = UDim.new(0, 5)
-    TabsPadding.Parent = TabsFrame
-    
+
     return Panel
 end
 
--- Создание правой панели с функциями
-function GuiModule:CreateRightPanel(parent)
+-- 🎨 Правая панель (функции)
+function SuperiorGui:CreateRightPanel(parent)
     local Panel = Instance.new("Frame")
     Panel.Name = "RightPanel"
-    Panel.Size = UDim2.new(1, -210, 1, 0)
+    Panel.Size = UDim2.new(1, -235, 1, -60)
+    Panel.Position = UDim2.new(0, 235, 0, 60)
     Panel.BackgroundColor3 = Colors.Secondary
+    Panel.BackgroundTransparency = 0.1
     Panel.BorderSizePixel = 0
     Panel.Parent = parent
-    
-    -- Скругление
+
+    -- Стилизация
     local PanelCorner = Instance.new("UICorner")
-    PanelCorner.CornerRadius = Styles.CornerRadius
+    PanelCorner.CornerRadius = Styles.MediumCorner
     PanelCorner.Parent = Panel
-    
-    -- Заголовок
+
+    local PanelStroke = Instance.new("UIStroke")
+    PanelStroke.Color = Colors.Border
+    PanelStroke.Thickness = 1
+    PanelStroke.Transparency = 0.5
+    PanelStroke.Parent = Panel
+
+    -- Заголовок с счетчиком функций
     local Header = Instance.new("TextLabel")
     Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 45)
-    Header.BackgroundColor3 = Colors.Tertiary
-    Header.BorderSizePixel = 0
-    Header.Text = "⚙️ ФУНКЦИИ"
-    Header.TextColor3 = Colors.Text
-    Header.Font = Styles.Font
-    Header.TextSize = 16
+    Header.Size = UDim2.new(1, -20, 0, 45)
+    Header.Position = UDim2.new(0, 10, 0, 10)
+    Header.BackgroundTransparency = 1
+    Header.Text = "⚡ ФУНКЦИИ"
+    Header.TextColor3 = Colors.TextSecondary
+    Header.Font = Styles.MediumFont
+    Header.TextSize = 14
+    Header.TextXAlignment = Enum.TextXAlignment.Left
     Header.Parent = Panel
-    
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 8)
-    HeaderCorner.Parent = Header
-    
+
     -- Контейнер для функций
     local FunctionsContainer = Instance.new("Frame")
     FunctionsContainer.Name = "FunctionsContainer"
-    FunctionsContainer.Size = UDim2.new(1, -10, 1, -55)
-    FunctionsContainer.Position = UDim2.new(0, 5, 0, 50)
+    FunctionsContainer.Size = UDim2.new(1, -20, 1, -70)
+    FunctionsContainer.Position = UDim2.new(0, 10, 0, 60)
     FunctionsContainer.BackgroundTransparency = 1
     FunctionsContainer.Parent = Panel
-    
+
     Panel.FunctionsContainer = FunctionsContainer
-    
+
     return Panel
 end
 
--- Функция создания новой вкладки
-function GuiModule:CreateTab(leftPanel, tabName, rightPanelFunctionsContainer)
-    -- Проверка наличия TabsFrame
-    local TabsFrame = leftPanel:FindFirstChild("TabsFrame")
-    if not TabsFrame then
-        warn("TabsFrame не найден в LeftPanel")
-        return nil
-    end
+-- 📌 Создание вкладки
+function SuperiorGui:CreateTab(leftPanel, tabName, icon)
+    icon = icon or "📌"
     
+    local TabsFrame = leftPanel:FindFirstChild("TabsFrame")
+    if not TabsFrame then return nil end
+
+    -- Создаем кнопку вкладки
     local TabButton = Instance.new("TextButton")
     TabButton.Name = "Tab_" .. tabName
-    TabButton.Size = UDim2.new(1, -10, 0, 40)
+    TabButton.Size = UDim2.new(1, -10, 0, 45)
     TabButton.BackgroundColor3 = Colors.Tertiary
+    TabButton.BackgroundTransparency = 0.2
     TabButton.BorderSizePixel = 0
-    TabButton.Text = "  " .. tabName
-    TabButton.TextColor3 = Colors.TextSecondary
-    TabButton.Font = Styles.Font
-    TabButton.TextSize = 14
-    TabButton.TextXAlignment = Enum.TextXAlignment.Left
+    TabButton.Text = ""
+    TabButton.AutoButtonColor = false
     TabButton.Parent = TabsFrame
-    
-    -- Скругление
+
+    -- Стилизация кнопки
     local TabCorner = Instance.new("UICorner")
     TabCorner.CornerRadius = Styles.SmallCorner
     TabCorner.Parent = TabButton
-    
+
     -- Иконка
     local Icon = Instance.new("TextLabel")
     Icon.Name = "Icon"
-    Icon.Size = UDim2.new(0, 30, 1, 0)
+    Icon.Size = UDim2.new(0, 35, 1, 0)
     Icon.BackgroundTransparency = 1
-    Icon.Text = "📌"
+    Icon.Text = icon
     Icon.TextColor3 = Colors.Accent
     Icon.Font = Enum.Font.Gotham
-    Icon.TextSize = 16
+    Icon.TextSize = 20
     Icon.Parent = TabButton
-    
-    -- Контейнер для функций этой вкладки
+
+    -- Текст вкладки
+    local Label = Instance.new("TextLabel")
+    Label.Name = "Label"
+    Label.Size = UDim2.new(1, -45, 1, 0)
+    Label.Position = UDim2.new(0, 40, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = tabName
+    Label.TextColor3 = Colors.TextSecondary
+    Label.Font = Styles.Font
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = TabButton
+
+    -- Эффект при наведении
+    TabButton.MouseEnter:Connect(function()
+        if TabButton.BackgroundColor3 ~= Colors.Accent then
+            TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        end
+    end)
+
+    TabButton.MouseLeave:Connect(function()
+        if TabButton.BackgroundColor3 ~= Colors.Accent then
+            TabButton.BackgroundColor3 = Colors.Tertiary
+        end
+    end)
+
+    -- Контейнер функций
     local FunctionsContainer = Instance.new("ScrollingFrame")
     FunctionsContainer.Name = "Functions_" .. tabName
     FunctionsContainer.Size = UDim2.new(1, 0, 1, 0)
     FunctionsContainer.BackgroundTransparency = 1
     FunctionsContainer.BorderSizePixel = 0
-    FunctionsContainer.ScrollBarThickness = 4
+    FunctionsContainer.ScrollBarThickness = 3
     FunctionsContainer.ScrollBarImageColor3 = Colors.Accent
+    FunctionsContainer.ScrollBarImageTransparency = 0.5
     FunctionsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
     FunctionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
     FunctionsContainer.Visible = false
-    FunctionsContainer.Parent = rightPanelFunctionsContainer
-    
+    FunctionsContainer.Parent = leftPanel.Parent:FindFirstChild("RightPanel"):FindFirstChild("FunctionsContainer")
+
     -- Layout для функций
     local FunctionsLayout = Instance.new("UIListLayout")
     FunctionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     FunctionsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-    FunctionsLayout.Padding = UDim.new(0, 8)
+    FunctionsLayout.Padding = UDim.new(0, 10)
     FunctionsLayout.Parent = FunctionsContainer
-    
+
     local FunctionsPadding = Instance.new("UIPadding")
     FunctionsPadding.PaddingTop = UDim.new(0, 10)
     FunctionsPadding.PaddingBottom = UDim.new(0, 10)
     FunctionsPadding.Parent = FunctionsContainer
-    
-    -- При клике на вкладку
+
+    -- Обработка клика
     TabButton.MouseButton1Click:Connect(function()
-        -- Скрываем все функции
-        for _, child in pairs(rightPanelFunctionsContainer:GetChildren()) do
-            if child:IsA("ScrollingFrame") then
-                child.Visible = false
+        -- Анимация скрытия всех функций
+        local rightPanel = leftPanel.Parent:FindFirstChild("RightPanel")
+        if rightPanel then
+            local container = rightPanel:FindFirstChild("FunctionsContainer")
+            if container then
+                for _, child in pairs(container:GetChildren()) do
+                    if child:IsA("ScrollingFrame") then
+                        child.Visible = false
+                    end
+                end
             end
         end
-        
-        -- Показываем функции выбранной вкладки
+
+        -- Показываем новые функции
         FunctionsContainer.Visible = true
-        
-        -- Обновляем цвета кнопок
+
+        -- Анимация кнопок
         for _, btn in pairs(TabsFrame:GetChildren()) do
             if btn:IsA("TextButton") then
                 btn.BackgroundColor3 = Colors.Tertiary
-                btn.TextColor3 = Colors.TextSecondary
+                btn:FindFirstChild("Label").TextColor3 = Colors.TextSecondary
             end
         end
+        
         TabButton.BackgroundColor3 = Colors.Accent
-        TabButton.TextColor3 = Colors.Text
+        Label.TextColor3 = Colors.Text
+        Icon.TextColor3 = Colors.Text
     end)
-    
+
     return FunctionsContainer
 end
 
--- Функция создания текста с кнопкой ON/OFF
-function GuiModule:CreateToggleFunction(parent, text, defaultState, callback)
+-- 🔘 Создание тумблера
+function SuperiorGui:CreateToggle(parent, text, defaultState, callback)
     local FunctionFrame = Instance.new("Frame")
     FunctionFrame.Name = "ToggleFunction"
-    FunctionFrame.Size = UDim2.new(1, -10, 0, 50)
+    FunctionFrame.Size = UDim2.new(1, -10, 0, 60)
     FunctionFrame.BackgroundColor3 = Colors.Tertiary
+    FunctionFrame.BackgroundTransparency = 0.2
     FunctionFrame.BorderSizePixel = 0
     FunctionFrame.Parent = parent
-    
-    -- Скругление
+
+    -- Стилизация
     local FrameCorner = Instance.new("UICorner")
     FrameCorner.CornerRadius = Styles.SmallCorner
     FrameCorner.Parent = FunctionFrame
-    
+
+    local FrameStroke = Instance.new("UIStroke")
+    FrameStroke.Color = Colors.Border
+    FrameStroke.Thickness = 1
+    FrameStroke.Transparency = 0.7
+    FrameStroke.Parent = FunctionFrame
+
+    -- Иконка функции
+    local Icon = Instance.new("TextLabel")
+    Icon.Name = "Icon"
+    Icon.Size = UDim2.new(0, 40, 1, 0)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = "⚡"
+    Icon.TextColor3 = Colors.Accent
+    Icon.Font = Enum.Font.Gotham
+    Icon.TextSize = 18
+    Icon.Parent = FunctionFrame
+
     -- Текст
     local TextLabel = Instance.new("TextLabel")
     TextLabel.Name = "Text"
-    TextLabel.Size = UDim2.new(1, -70, 1, 0)
-    TextLabel.Position = UDim2.new(0, 10, 0, 0)
+    TextLabel.Size = UDim2.new(1, -110, 1, 0)
+    TextLabel.Position = UDim2.new(0, 45, 0, 0)
     TextLabel.BackgroundTransparency = 1
     TextLabel.Text = text
     TextLabel.TextColor3 = Colors.Text
     TextLabel.Font = Styles.Font
     TextLabel.TextSize = 14
     TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.TextWrapped = true
     TextLabel.Parent = FunctionFrame
-    
-    -- Кнопка Toggle
+
+    -- Современный тумблер
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Name = "Toggle"
-    ToggleButton.Size = UDim2.new(0, 50, 0, 30)
-    ToggleButton.Position = UDim2.new(1, -60, 0.5, -15)
+    ToggleButton.Size = UDim2.new(0, 55, 0, 28)
+    ToggleButton.Position = UDim2.new(1, -70, 0.5, -14)
     ToggleButton.BackgroundColor3 = defaultState and Colors.Success or Colors.Danger
+    ToggleButton.BackgroundTransparency = 0.1
     ToggleButton.BorderSizePixel = 0
-    ToggleButton.Text = defaultState and "ON" or "OFF"
-    ToggleButton.TextColor3 = Colors.Text
-    ToggleButton.Font = Styles.SmallFont
-    ToggleButton.TextSize = 12
+    ToggleButton.Text = ""
+    ToggleButton.AutoButtonColor = false
     ToggleButton.Parent = FunctionFrame
-    
-    local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.CornerRadius = UDim.new(0, 15)
-    ButtonCorner.Parent = ToggleButton
-    
+
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 14)
+    ToggleCorner.Parent = ToggleButton
+
+    -- Кружок тумблера
+    local ToggleKnob = Instance.new("Frame")
+    ToggleKnob.Name = "Knob"
+    ToggleKnob.Size = UDim2.new(0, 24, 0, 24)
+    ToggleKnob.Position = UDim2.new(defaultState and 1 or 0, defaultState and -27 or 3, 0.5, -12)
+    ToggleKnob.BackgroundColor3 = Colors.Text
+    ToggleKnob.BorderSizePixel = 0
+    ToggleKnob.Parent = ToggleButton
+
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = ToggleKnob
+
     local state = defaultState or false
-    
+
     ToggleButton.MouseButton1Click:Connect(function()
         state = not state
-        ToggleButton.BackgroundColor3 = state and Colors.Success or Colors.Danger
-        ToggleButton.Text = state and "ON" or "OFF"
         
+        -- Анимация
+        ToggleButton.BackgroundColor3 = state and Colors.Success or Colors.Danger
+        ToggleKnob:TweenPosition(
+            UDim2.new(state and 1 or 0, state and -27 or 3, 0.5, -12),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.15,
+            true
+        )
+
         if callback then
             callback(state)
         end
     end)
-    
+
     return FunctionFrame
 end
 
--- Функция создания обычной кнопки
-function GuiModule:CreateButtonFunction(parent, text, callback)
+-- 🔘 Создание кнопки
+function SuperiorGui:CreateButton(parent, text, icon, callback)
+    icon = icon or "🔘"
+    
     local FunctionFrame = Instance.new("Frame")
     FunctionFrame.Name = "ButtonFunction"
-    FunctionFrame.Size = UDim2.new(1, -10, 0, 50)
+    FunctionFrame.Size = UDim2.new(1, -10, 0, 60)
     FunctionFrame.BackgroundColor3 = Colors.Tertiary
+    FunctionFrame.BackgroundTransparency = 0.2
     FunctionFrame.BorderSizePixel = 0
     FunctionFrame.Parent = parent
-    
-    -- Скругление
+
+    -- Стилизация
     local FrameCorner = Instance.new("UICorner")
     FrameCorner.CornerRadius = Styles.SmallCorner
     FrameCorner.Parent = FunctionFrame
-    
+
+    local FrameStroke = Instance.new("UIStroke")
+    FrameStroke.Color = Colors.Border
+    FrameStroke.Thickness = 1
+    FrameStroke.Transparency = 0.7
+    FrameStroke.Parent = FunctionFrame
+
+    -- Иконка
+    local Icon = Instance.new("TextLabel")
+    Icon.Name = "Icon"
+    Icon.Size = UDim2.new(0, 40, 1, 0)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = icon
+    Icon.TextColor3 = Colors.Accent
+    Icon.Font = Enum.Font.Gotham
+    Icon.TextSize = 18
+    Icon.Parent = FunctionFrame
+
     -- Текст
     local TextLabel = Instance.new("TextLabel")
     TextLabel.Name = "Text"
-    TextLabel.Size = UDim2.new(1, -70, 1, 0)
-    TextLabel.Position = UDim2.new(0, 10, 0, 0)
+    TextLabel.Size = UDim2.new(1, -110, 1, 0)
+    TextLabel.Position = UDim2.new(0, 45, 0, 0)
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = text
+    TextLabel.TextColor3 = Colors.Text
+    TextLabel.Font = Styles.Font
+    TextLabel.TextSize = 14
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.TextWrapped = true
+    TextLabel.Parent = FunctionFrame
+
+    -- Кнопка действия
+    local ActionButton = Instance.new("TextButton")
+    ActionButton.Name = "Action"
+    ActionButton.Size = UDim2.new(0, 70, 0, 35)
+    ActionButton.Position = UDim2.new(1, -85, 0.5, -17.5)
+    ActionButton.BackgroundColor3 = Colors.Accent
+    ActionButton.BackgroundTransparency = 0.1
+    ActionButton.BorderSizePixel = 0
+    ActionButton.Text = "▶"
+    ActionButton.TextColor3 = Colors.Text
+    ActionButton.Font = Styles.MediumFont
+    ActionButton.TextSize = 16
+    ActionButton.AutoButtonColor = false
+    ActionButton.Parent = FunctionFrame
+
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = Styles.ButtonCorner
+    ButtonCorner.Parent = ActionButton
+
+    -- Эффекты наведения
+    ActionButton.MouseEnter:Connect(function()
+        ActionButton.BackgroundColor3 = Colors.AccentLight
+    end)
+
+    ActionButton.MouseLeave:Connect(function()
+        ActionButton.BackgroundColor3 = Colors.Accent
+    end)
+
+    ActionButton.MouseButton1Click:Connect(function()
+        -- Эффект нажатия
+        ActionButton.TextSize = 14
+        wait(0.05)
+        ActionButton.TextSize = 16
+        
+        if callback then
+            callback()
+        end
+    end)
+
+    return FunctionFrame
+end
+
+-- 📊 Создание слайдера
+function SuperiorGui:CreateSlider(parent, text, min, max, defaultValue, callback)
+    local FunctionFrame = Instance.new("Frame")
+    FunctionFrame.Name = "SliderFunction"
+    FunctionFrame.Size = UDim2.new(1, -10, 0, 70)
+    FunctionFrame.BackgroundColor3 = Colors.Tertiary
+    FunctionFrame.BackgroundTransparency = 0.2
+    FunctionFrame.BorderSizePixel = 0
+    FunctionFrame.Parent = parent
+
+    -- Стилизация
+    local FrameCorner = Instance.new("UICorner")
+    FrameCorner.CornerRadius = Styles.SmallCorner
+    FrameCorner.Parent = FunctionFrame
+
+    -- Заголовок
+    local TextLabel = Instance.new("TextLabel")
+    TextLabel.Name = "Text"
+    TextLabel.Size = UDim2.new(1, -20, 0, 30)
+    TextLabel.Position = UDim2.new(0, 10, 0, 5)
     TextLabel.BackgroundTransparency = 1
     TextLabel.Text = text
     TextLabel.TextColor3 = Colors.Text
@@ -361,117 +623,162 @@ function GuiModule:CreateButtonFunction(parent, text, callback)
     TextLabel.TextSize = 14
     TextLabel.TextXAlignment = Enum.TextXAlignment.Left
     TextLabel.Parent = FunctionFrame
-    
-    -- Кнопка
-    local ActionButton = Instance.new("TextButton")
-    ActionButton.Name = "Button"
-    ActionButton.Size = UDim2.new(0, 50, 0, 30)
-    ActionButton.Position = UDim2.new(1, -60, 0.5, -15)
-    ActionButton.BackgroundColor3 = Colors.Accent
-    ActionButton.BorderSizePixel = 0
-    ActionButton.Text = "▶"
-    ActionButton.TextColor3 = Colors.Text
-    ActionButton.Font = Styles.Font
-    ActionButton.TextSize = 16
-    ActionButton.Parent = FunctionFrame
-    
-    local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.CornerRadius = UDim.new(0, 15)
-    ButtonCorner.Parent = ActionButton
-    
-    -- Эффект при наведении
-    ActionButton.MouseEnter:Connect(function()
-        ActionButton.BackgroundColor3 = Colors.AccentLight
+
+    -- Значение
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Name = "Value"
+    ValueLabel.Size = UDim2.new(0, 50, 0, 30)
+    ValueLabel.Position = UDim2.new(1, -60, 0, 5)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(defaultValue or min)
+    ValueLabel.TextColor3 = Colors.Accent
+    ValueLabel.Font = Styles.BoldFont
+    ValueLabel.TextSize = 16
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = FunctionFrame
+
+    -- Ползунок
+    local Slider = Instance.new("Frame")
+    Slider.Name = "Slider"
+    Slider.Size = UDim2.new(1, -40, 0, 4)
+    Slider.Position = UDim2.new(0, 20, 0, 45)
+    Slider.BackgroundColor3 = Colors.Border
+    Slider.BorderSizePixel = 0
+    Slider.Parent = FunctionFrame
+
+    local SliderCorner = Instance.new("UICorner")
+    SliderCorner.CornerRadius = UDim.new(1, 0)
+    SliderCorner.Parent = Slider
+
+    -- Заполнение
+    local Fill = Instance.new("Frame")
+    Fill.Name = "Fill"
+    Fill.Size = UDim2.new((defaultValue - min) / (max - min), 0, 1, 0)
+    Fill.BackgroundColor3 = Colors.Accent
+    Fill.BorderSizePixel = 0
+    Fill.Parent = Slider
+
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(1, 0)
+    FillCorner.Parent = Fill
+
+    -- Кнопка ползунка
+    local Knob = Instance.new("TextButton")
+    Knob.Name = "Knob"
+    Knob.Size = UDim2.new(0, 20, 0, 20)
+    Knob.Position = UDim2.new((defaultValue - min) / (max - min), -10, 0.5, -10)
+    Knob.BackgroundColor3 = Colors.Text
+    Knob.BorderSizePixel = 0
+    Knob.Text = ""
+    Knob.Parent = Slider
+
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = Knob
+
+    local KnobStroke = Instance.new("UIStroke")
+    KnobStroke.Color = Colors.Accent
+    KnobStroke.Thickness = 2
+    KnobStroke.Parent = Knob
+
+    local dragging = false
+    local value = defaultValue or min
+
+    Knob.MouseButton1Down:Connect(function()
+        dragging = true
     end)
-    
-    ActionButton.MouseLeave:Connect(function()
-        ActionButton.BackgroundColor3 = Colors.Accent
-    end)
-    
-    ActionButton.MouseButton1Click:Connect(function()
-        if callback then
-            callback()
+
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
         end
-        
-        -- Анимация нажатия
-        ActionButton:TweenSize(UDim2.new(0, 45, 0, 25), "Out", "Quad", 0.1)
-        task.wait(0.1)
-        ActionButton:TweenSize(UDim2.new(0, 50, 0, 30), "Out", "Quad", 0.1)
     end)
-    
+
+    Knob.MouseButton1Up:Connect(function()
+        dragging = false
+    end)
+
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if dragging then
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+            local sliderPos = Slider.AbsolutePosition
+            local sliderSize = Slider.AbsoluteSize.X
+            local relativePos = math.clamp(mousePos.X - sliderPos.X, 0, sliderSize)
+            local newValue = min + (relativePos / sliderSize) * (max - min)
+            newValue = math.floor(newValue * 100) / 100
+            
+            if newValue ~= value then
+                value = newValue
+                Fill.Size = UDim2.new(relativePos / sliderSize, 0, 1, 0)
+                Knob.Position = UDim2.new(relativePos / sliderSize, -10, 0.5, -10)
+                ValueLabel.Text = tostring(value)
+                
+                if callback then
+                    callback(value)
+                end
+            end
+        end
+    end)
+
     return FunctionFrame
 end
 
--- Функция создания информационного текста
-function GuiModule:CreateInfoLabel(parent, text)
+-- 📝 Создание поля ввода
+function SuperiorGui:CreateInput(parent, text, placeholder, callback)
     local FunctionFrame = Instance.new("Frame")
-    FunctionFrame.Name = "InfoFunction"
-    FunctionFrame.Size = UDim2.new(1, -10, 0, 40)
-    FunctionFrame.BackgroundTransparency = 1
+    FunctionFrame.Name = "InputFunction"
+    FunctionFrame.Size = UDim2.new(1, -10, 0, 70)
+    FunctionFrame.BackgroundColor3 = Colors.Tertiary
+    FunctionFrame.BackgroundTransparency = 0.2
+    FunctionFrame.BorderSizePixel = 0
     FunctionFrame.Parent = parent
-    
+
+    -- Стилизация
+    local FrameCorner = Instance.new("UICorner")
+    FrameCorner.CornerRadius = Styles.SmallCorner
+    FrameCorner.Parent = FunctionFrame
+
+    -- Заголовок
     local TextLabel = Instance.new("TextLabel")
-    TextLabel.Size = UDim2.new(1, 0, 1, 0)
+    TextLabel.Name = "Text"
+    TextLabel.Size = UDim2.new(1, -20, 0, 30)
+    TextLabel.Position = UDim2.new(0, 10, 0, 5)
     TextLabel.BackgroundTransparency = 1
-    TextLabel.Text = "ℹ️ " .. text
-    TextLabel.TextColor3 = Colors.TextSecondary
-    TextLabel.Font = Styles.SmallFont
-    TextLabel.TextSize = 12
-    TextLabel.TextWrapped = true
+    TextLabel.Text = text
+    TextLabel.TextColor3 = Colors.Text
+    TextLabel.Font = Styles.Font
+    TextLabel.TextSize = 14
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
     TextLabel.Parent = FunctionFrame
-    
+
+    -- Поле ввода
+    local InputBox = Instance.new("TextBox")
+    InputBox.Name = "Input"
+    InputBox.Size = UDim2.new(1, -30, 0, 35)
+    InputBox.Position = UDim2.new(0, 15, 0, 35)
+    InputBox.BackgroundColor3 = Colors.Background
+    InputBox.BackgroundTransparency = 0.2
+    InputBox.BorderSizePixel = 0
+    InputBox.Text = ""
+    InputBox.PlaceholderText = placeholder
+    InputBox.PlaceholderColor3 = Colors.TextSecondary
+    InputBox.TextColor3 = Colors.Text
+    InputBox.Font = Styles.Font
+    InputBox.TextSize = 14
+    InputBox.ClearTextOnFocus = false
+    InputBox.Parent = FunctionFrame
+
+    local InputCorner = Instance.new("UICorner")
+    InputCorner.CornerRadius = Styles.SmallCorner
+    InputCorner.Parent = InputBox
+
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed and callback then
+            callback(InputBox.Text)
+        end
+    end)
+
     return FunctionFrame
 end
 
--- Простая демо-функция без ошибок
-function GuiModule:Demo()
-    -- Создаем GUI
-    local gui = self:CreateMainFrame(game:GetService("CoreGui"))
-    
-    -- Получаем панели
-    local leftPanel = gui.LeftPanel
-    local rightPanel = gui.RightPanel
-    
-    -- Создаем вкладки
-    local mainTab = self:CreateTab(leftPanel, "Основные", rightPanel.FunctionsContainer)
-    local settingsTab = self:CreateTab(leftPanel, "Настройки", rightPanel.FunctionsContainer)
-    local infoTab = self:CreateTab(leftPanel, "Информация", rightPanel.FunctionsContainer)
-    
-    -- Добавляем функции в основную вкладку
-    self:CreateToggleFunction(mainTab, "Уведомления", true, function(state)
-        print("Уведомления:", state)
-    end)
-    
-    self:CreateToggleFunction(mainTab, "Авто-запуск", false, function(state)
-        print("Авто-запуск:", state)
-    end)
-    
-    self:CreateButtonFunction(mainTab, "Действие", function()
-        print("Действие выполнено!")
-    end)
-    
-    -- Добавляем функции в настройки
-    self:CreateToggleFunction(settingsTab, "Темная тема", true, function(state)
-        print("Тема:", state and "темная" or "светлая")
-    end)
-    
-    self:CreateButtonFunction(settingsTab, "Сброс", function()
-        print("Настройки сброшены!")
-    end)
-    
-    -- Добавляем информацию
-    self:CreateInfoLabel(infoTab, "Версия 3.0")
-    self:CreateInfoLabel(infoTab, "Работает без ошибок ✅")
-    
-    -- Активируем первую вкладку через 0.1 секунды
-    task.wait(0.1)
-    local firstTab = leftPanel:FindFirstChild("TabsFrame"):FindFirstChild("Tab_Основные")
-    if firstTab then
-        firstTab.MouseButton1Click:Fire()
-    end
-    
-    print("✅ GUI успешно создан!")
-    return gui
-end
-
-return GuiModule
+return SuperiorGui
