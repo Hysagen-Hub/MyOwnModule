@@ -1,9 +1,3 @@
---[[
-	Красивый GUI модуль
-	Автор: Assistant
-	Версия: 1.0
-]]
-
 local GuiModule = {}
 
 -- Сервисы
@@ -12,428 +6,193 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
--- Настройки по умолчанию
 local DEFAULT_SETTINGS = {
-	MainColor = Color3.fromRGB(30, 30, 35),
-	SecondaryColor = Color3.fromRGB(45, 45, 50),
+	MainColor = Color3.fromRGB(18, 18, 22),
+	SecondaryColor = Color3.fromRGB(28, 28, 32),
 	AccentColor = Color3.fromRGB(0, 160, 255),
 	TextColor = Color3.fromRGB(255, 255, 255),
-	ButtonColor = Color3.fromRGB(60, 60, 65),
-	ButtonHoverColor = Color3.fromRGB(75, 75, 80),
-	
-	Font = Enum.Font.Gotham,
+	ButtonColor = Color3.fromRGB(45, 45, 50),
+	ButtonHoverColor = Color3.fromRGB(60, 60, 65),
+	Font = Enum.Font.GothamMedium,
 	TextSize = 14,
-	TitleSize = 18,
-	
-	CornerRadius = UDim.new(0, 8),
-	
-	Width = 600,
-	Height = 400,
+	CornerRadius = UDim.new(0, 10),
+	Width = 550,
+	Height = 350,
 }
 
--- Создание основного GUI
 function GuiModule.new(settings)
 	settings = settings or {}
 	for k, v in pairs(DEFAULT_SETTINGS) do
-		if settings[k] == nil then
-			settings[k] = v
-		end
+		if settings[k] == nil then settings[k] = v end
 	end
-	
-	-- Создаем основной Frame
+
+	-- Создаем контейнер
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "CustomGuiSystem"
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.Parent = player:WaitForChild("PlayerGui")
+
+	-- Основной фрейм
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Size = UDim2.new(0, settings.Width, 0, settings.Height)
 	mainFrame.Position = UDim2.new(0.5, -settings.Width/2, 0.5, -settings.Height/2)
 	mainFrame.BackgroundColor3 = settings.MainColor
-	mainFrame.BackgroundTransparency = 0.1
 	mainFrame.BorderSizePixel = 0
-	mainFrame.ClipsDescendants = true
-	mainFrame.Name = "MainGUI"
-	mainFrame.Active = true
-	mainFrame.Draggable = false -- Будем делать свое перетаскивание
-	
-	-- Создаем UI Corner
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = settings.CornerRadius
-	corner.Parent = mainFrame
-	
-	-- Создаем UI Stroke для красивого контура
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 2
+	mainFrame.Parent = screenGui
+
+	Instance.new("UICorner", mainFrame).CornerRadius = settings.CornerRadius
+	local stroke = Instance.new("UIStroke", mainFrame)
+	stroke.Thickness = 1.5
 	stroke.Color = settings.AccentColor
-	stroke.Transparency = 0.5
-	stroke.Parent = mainFrame
-	
-	-- Создаем левую панель (вкладки)
+	stroke.Transparency = 0.6
+
+	-- Левая панель (Зона для перетаскивания)
 	local leftPanel = Instance.new("Frame")
-	leftPanel.Size = UDim2.new(0, 150, 1, 0)
+	leftPanel.Size = UDim2.new(0, 160, 1, 0)
 	leftPanel.BackgroundColor3 = settings.SecondaryColor
-	leftPanel.BackgroundTransparency = 0.2
 	leftPanel.BorderSizePixel = 0
-	leftPanel.Name = "LeftPanel"
 	leftPanel.Parent = mainFrame
-	
-	-- Левый скроллинг фрейм для вкладок
-	local tabsScrollingFrame = Instance.new("ScrollingFrame")
-	tabsScrollingFrame.Size = UDim2.new(1, -20, 1, -20)
-	tabsScrollingFrame.Position = UDim2.new(0, 10, 0, 10)
-	tabsScrollingFrame.BackgroundTransparency = 1
-	tabsScrollingFrame.BorderSizePixel = 0
-	tabsScrollingFrame.ScrollBarThickness = 4
-	tabsScrollingFrame.ScrollBarImageColor3 = settings.AccentColor
-	tabsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	tabsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	tabsScrollingFrame.Name = "TabsScrollingFrame"
-	tabsScrollingFrame.Parent = leftPanel
-	
-	local tabsLayout = Instance.new("UIListLayout")
+	Instance.new("UICorner", leftPanel).CornerRadius = settings.CornerRadius
+
+	local tabsScrolling = Instance.new("ScrollingFrame")
+	tabsScrolling.Size = UDim2.new(1, -10, 1, -20)
+	tabsScrolling.Position = UDim2.new(0, 5, 0, 10)
+	tabsScrolling.BackgroundTransparency = 1
+	tabsScrolling.ScrollBarThickness = 2
+	tabsScrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabsScrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	tabsScrolling.Parent = leftPanel
+
+	local tabsLayout = Instance.new("UIListLayout", tabsScrolling)
 	tabsLayout.Padding = UDim.new(0, 5)
 	tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	tabsLayout.Parent = tabsScrollingFrame
-	
-	-- Создаем правую панель (функции)
+
+	-- Правая панель
 	local rightPanel = Instance.new("Frame")
-	rightPanel.Size = UDim2.new(1, -150, 1, 0)
-	rightPanel.Position = UDim2.new(0, 150, 0, 0)
+	rightPanel.Size = UDim2.new(1, -160, 1, 0)
+	rightPanel.Position = UDim2.new(0, 160, 0, 0)
 	rightPanel.BackgroundTransparency = 1
-	rightPanel.BorderSizePixel = 0
-	rightPanel.Name = "RightPanel"
 	rightPanel.Parent = mainFrame
-	
-	-- Правый скроллинг фрейм для функций
-	local functionsScrollingFrame = Instance.new("ScrollingFrame")
-	functionsScrollingFrame.Size = UDim2.new(1, -20, 1, -20)
-	functionsScrollingFrame.Position = UDim2.new(0, 10, 0, 10)
-	functionsScrollingFrame.BackgroundTransparency = 1
-	functionsScrollingFrame.BorderSizePixel = 0
-	functionsScrollingFrame.ScrollBarThickness = 4
-	functionsScrollingFrame.ScrollBarImageColor3 = settings.AccentColor
-	functionsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	functionsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	functionsScrollingFrame.Name = "FunctionsScrollingFrame"
-	functionsScrollingFrame.Parent = rightPanel
-	
-	local functionsLayout = Instance.new("UIListLayout")
-	functionsLayout.Padding = UDim.new(0, 5)
-	functionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	functionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	functionsLayout.Parent = functionsScrollingFrame
-	
-	-- Автоматическое обновление CanvasSize
-	local function updateCanvasSize(frame, layout)
-		local contentHeight = 0
-		for _, child in pairs(frame:GetChildren()) do
-			if child:IsA("Frame") or child:IsA("TextButton") then
-				contentHeight = contentHeight + child.AbsoluteSize.Y + 5
-			end
-		end
-		frame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
-	end
-	
-	tabsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		updateCanvasSize(tabsScrollingFrame, tabsLayout)
-	end)
-	
-	functionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		updateCanvasSize(functionsScrollingFrame, functionsLayout)
-	end)
-	
-	-- Данные для хранения вкладок
+
+	local funcScrolling = Instance.new("ScrollingFrame")
+	funcScrolling.Size = UDim2.new(1, -10, 1, -20)
+	funcScrolling.Position = UDim2.new(0, 5, 0, 10)
+	funcScrolling.BackgroundTransparency = 1
+	funcScrolling.ScrollBarThickness = 2
+	funcScrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	funcScrolling.Parent = rightPanel
+
+	local funcLayout = Instance.new("UIListLayout", funcScrolling)
+	funcLayout.Padding = UDim.new(0, 8)
+	funcLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
 	local tabsData = {}
 	local currentTab = nil
-	
-	-- Функция для обновления отображения функций
-	local function updateFunctionsDisplay()
-		-- Очищаем правый фрейм
-		for _, child in pairs(functionsScrollingFrame:GetChildren()) do
-			if child:IsA("Frame") then
-				child:Destroy()
-			end
+
+	-- Логика переключения
+	local function updateDisplay()
+		for _, child in pairs(funcScrolling:GetChildren()) do
+			if child:IsA("Frame") then child.Visible = false end
 		end
-		
 		if currentTab and tabsData[currentTab] then
-			-- Показываем функции текущей вкладки
-			for _, funcData in ipairs(tabsData[currentTab].functions) do
-				createFunctionItem(funcData.name, funcData.callback, functionsScrollingFrame, settings)
+			for _, item in pairs(tabsData[currentTab].items) do
+				item.Visible = true
 			end
 		end
 	end
-	
-	-- Функция для создания кнопки вкладки
-	local function createTabButton(tabName)
-		local tabButton = Instance.new("TextButton")
-		tabButton.Size = UDim2.new(1, -10, 0, 35)
-		tabButton.BackgroundColor3 = settings.SecondaryColor
-		tabButton.Text = tabName
-		tabButton.TextColor3 = settings.TextColor
-		tabButton.Font = settings.Font
-		tabButton.TextSize = settings.TextSize
-		tabButton.BorderSizePixel = 0
-		tabButton.AutoButtonColor = false
-		tabButton.Name = tabName .. "Button"
-		
-		local buttonCorner = Instance.new("UICorner")
-		buttonCorner.CornerRadius = UDim.new(0, 6)
-		buttonCorner.Parent = tabButton
-		
-		-- Эффекты наведения
-		tabButton.MouseEnter:Connect(function()
-			TweenService:Create(tabButton, TweenInfo.new(0.2), {
-				BackgroundColor3 = settings.ButtonHoverColor
-			}):Play()
-		end)
-		
-		tabButton.MouseLeave:Connect(function()
-			if tabsData[tabName] and tabsData[tabName].button then
-				if currentTab ~= tabName then
-					TweenService:Create(tabButton, TweenInfo.new(0.2), {
-						BackgroundColor3 = settings.SecondaryColor
-					}):Play()
-				end
-			end
-		end)
-		
-		tabButton.MouseButton1Click:Connect(function()
-			-- Обновляем внешний вид предыдущей выбранной вкладки
-			if currentTab and tabsData[currentTab] and tabsData[currentTab].button then
-				TweenService:Create(tabsData[currentTab].button, TweenInfo.new(0.2), {
-					BackgroundColor3 = settings.SecondaryColor
-				}):Play()
-			end
-			
-			-- Выделяем текущую вкладку
-			TweenService:Create(tabButton, TweenInfo.new(0.2), {
-				BackgroundColor3 = settings.AccentColor
-			}):Play()
-			
-			currentTab = tabName
-			updateFunctionsDisplay()
-		end)
-		
-		tabButton.Parent = tabsScrollingFrame
-		
-		return tabButton
-	end
-	
-	-- Функция для создания элемента функции
-	local function createFunctionItem(funcName, callback, parent, settings)
-		local functionFrame = Instance.new("Frame")
-		functionFrame.Size = UDim2.new(1, -10, 0, 45)
-		functionFrame.BackgroundColor3 = settings.SecondaryColor
-		functionFrame.BackgroundTransparency = 0.3
-		functionFrame.BorderSizePixel = 0
-		functionFrame.Name = funcName .. "Frame"
-		
-		local frameCorner = Instance.new("UICorner")
-		frameCorner.CornerRadius = UDim.new(0, 6)
-		frameCorner.Parent = functionFrame
-		
-		local textLabel = Instance.new("TextLabel")
-		textLabel.Size = UDim2.new(0.7, -5, 1, -10)
-		textLabel.Position = UDim2.new(0, 5, 0, 5)
-		textLabel.BackgroundTransparency = 1
-		textLabel.Text = funcName
-		textLabel.TextColor3 = settings.TextColor
-		textLabel.Font = settings.Font
-		textLabel.TextSize = settings.TextSize
-		textLabel.TextXAlignment = Enum.TextXAlignment.Left
-		textLabel.Name = "FunctionLabel"
-		textLabel.Parent = functionFrame
-		
-		local button = Instance.new("TextButton")
-		button.Size = UDim2.new(0.25, -10, 1, -10)
-		button.Position = UDim2.new(0.75, 5, 0, 5)
-		button.BackgroundColor3 = settings.ButtonColor
-		button.Text = "Выполнить"
-		button.TextColor3 = settings.TextColor
-		button.Font = settings.Font
-		button.TextSize = settings.TextSize
-		button.BorderSizePixel = 0
-		button.AutoButtonColor = false
-		button.Name = "ExecuteButton"
-		
-		local buttonCorner = Instance.new("UICorner")
-		buttonCorner.CornerRadius = UDim.new(0, 6)
-		buttonCorner.Parent = button
-		
-		-- Эффекты наведения на кнопку
-		button.MouseEnter:Connect(function()
-			TweenService:Create(button, TweenInfo.new(0.2), {
-				BackgroundColor3 = settings.ButtonHoverColor
-			}):Play()
-		end)
-		
-		button.MouseLeave:Connect(function()
-			TweenService:Create(button, TweenInfo.new(0.2), {
-				BackgroundColor3 = settings.ButtonColor
-			}):Play()
-		end)
-		
-		-- Обработка нажатия кнопки
-		button.MouseButton1Click:Connect(function()
-			if callback then
-				local success, err = pcall(callback)
-				if not success then
-					warn("Ошибка в функции '" .. funcName .. "': " .. tostring(err))
-				end
-			end
-		end)
-		
-		button.Parent = functionFrame
-		functionFrame.Parent = parent
-		
-		return functionFrame
-	end
-	
-	-- Методы для работы с GUI
-	
-	-- Создание новой вкладки
+
+	-- Метод создания вкладки
 	function mainFrame:CreateTab(tabName)
-		if not tabName or type(tabName) ~= "string" then
-			warn("Имя вкладки должно быть строкой!")
-			return nil
-		end
-		
-		if tabsData[tabName] then
-			warn("Вкладка с именем '" .. tabName .. "' уже существует!")
-			return nil
-		end
-		
-		local tabButton = createTabButton(tabName)
-		
-		tabsData[tabName] = {
-			name = tabName,
-			button = tabButton,
-			functions = {}
-		}
-		
-		-- Если это первая вкладка, автоматически выбираем её
-		if not currentTab then
+		local tabBtn = Instance.new("TextButton")
+		tabBtn.Size = UDim2.new(1, -10, 0, 35)
+		tabBtn.BackgroundColor3 = settings.ButtonColor
+		tabBtn.Text = tabName
+		tabBtn.TextColor3 = settings.TextColor
+		tabBtn.Font = settings.Font
+		tabBtn.TextSize = 13
+		tabBtn.AutoButtonColor = false
+		tabBtn.Parent = tabsScrolling
+		Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+
+		tabsData[tabName] = {button = tabBtn, items = {}}
+
+		tabBtn.MouseButton1Click:Connect(function()
+			if currentTab then 
+				TweenService:Create(tabsData[currentTab].button, TweenInfo.new(0.2), {BackgroundColor3 = settings.ButtonColor}):Play()
+			end
 			currentTab = tabName
-			tabButton.BackgroundColor3 = settings.AccentColor
-			updateFunctionsDisplay()
+			TweenService:Create(tabBtn, TweenInfo.new(0.2), {BackgroundColor3 = settings.AccentColor}):Play()
+			updateDisplay()
+		end)
+
+		if not currentTab then 
+			currentTab = tabName
+			tabBtn.BackgroundColor3 = settings.AccentColor
 		end
-		
-		return tabsData[tabName]
+		return tabName
 	end
-	
-	-- Добавление функции во вкладку
+
+	-- Метод добавления функции
 	function mainFrame:AddFunction(tabName, funcName, callback)
-		if not tabName or not tabsData[tabName] then
-			warn("Вкладка '" .. tostring(tabName) .. "' не найдена!")
-			return false
-		end
-		
-		if not funcName or type(funcName) ~= "string" then
-			warn("Имя функции должно быть строкой!")
-			return false
-		end
-		
-		table.insert(tabsData[tabName].functions, {
-			name = funcName,
-			callback = callback or function() end
-		})
-		
-		-- Если это текущая вкладка, обновляем отображение
-		if currentTab == tabName then
-			updateFunctionsDisplay()
-		end
-		
-		return true
+		local fFrame = Instance.new("Frame")
+		fFrame.Size = UDim2.new(1, -10, 0, 40)
+		fFrame.BackgroundColor3 = settings.SecondaryColor
+		fFrame.Visible = (currentTab == tabName)
+		fFrame.Parent = funcScrolling
+		Instance.new("UICorner", fFrame).CornerRadius = UDim.new(0, 6)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0.7, 0, 1, 0)
+		label.Position = UDim2.new(0, 10, 0, 0)
+		label.Text = funcName
+		label.TextColor3 = settings.TextColor
+		label.BackgroundTransparency = 1
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Font = settings.Font
+		label.Parent = fFrame
+
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0.3, -10, 0.7, 0)
+		btn.Position = UDim2.new(0.7, 5, 0.15, 0)
+		btn.BackgroundColor3 = settings.AccentColor
+		btn.Text = "RUN"
+		btn.TextColor3 = settings.TextColor
+		btn.Font = settings.Font
+		btn.Parent = fFrame
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+		btn.MouseButton1Click:Connect(function()
+			task.spawn(callback)
+			btn.Text = "..."
+			task.wait(0.2)
+			btn.Text = "RUN"
+		end)
+
+		table.insert(tabsData[tabName].items, fFrame)
 	end
-	
-	-- Удаление вкладки
-	function mainFrame:RemoveTab(tabName)
-		if tabsData[tabName] then
-			tabsData[tabName].button:Destroy()
-			tabsData[tabName] = nil
-			
-			if currentTab == tabName then
-				currentTab = nil
-				-- Выбираем первую доступную вкладку
-				for name, _ in pairs(tabsData) do
-					if tabsData[name].button then
-						tabsData[name].button.MouseButton1Click:Fire()
-						break
-					end
-				end
-			end
-		end
-	end
-	
-	-- Очистка всех функций во вкладке
-	function mainFrame:ClearFunctions(tabName)
-		if tabsData[tabName] then
-			tabsData[tabName].functions = {}
-			if currentTab == tabName then
-				updateFunctionsDisplay()
-			end
-		end
-	end
-	
-	-- Показать/скрыть GUI
-	function mainFrame:SetVisible(visible)
-		mainFrame.Visible = visible
-	end
-	
-	-- Анимация появления
-	function mainFrame:Show()
-		mainFrame.Visible = true
-		mainFrame.BackgroundTransparency = 1
-		
-		TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-			BackgroundTransparency = 0.1
-		}):Play()
-	end
-	
-	function mainFrame:Hide()
-		TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-			BackgroundTransparency = 1
-		}):Play()
-		
-		task.wait(0.3)
-		mainFrame.Visible = false
-	end
-	
-	-- Добавляем возможность перетаскивания
-	local dragging = false
-	local dragInput
-	local dragStart
-	local startPos
-	
-	mainFrame.InputBegan:Connect(function(input)
+
+	-- Перетаскивание (только за LeftPanel)
+	local dragging, dragInput, dragStart, startPos
+	leftPanel.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
 			dragStart = input.Position
 			startPos = mainFrame.Position
-			
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
 		end
 	end)
-	
-	mainFrame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
-			dragInput = input
-		end
-	end)
-	
+
 	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - dragStart
-			mainFrame.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
+			mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
-	
+
+	leftPanel.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+	end)
+
 	return mainFrame
 end
 
