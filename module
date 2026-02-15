@@ -2,10 +2,14 @@ local UI_Module = {}
 local TweenService = game:GetService("TweenService")
 
 function UI_Module.CreateMain(hubTitle)
-	local Library = {} -- Объект, который мы вернем
+	local Library = {
+		AccentColor = Color3.fromRGB(60, 90, 255), -- Дефолтный синий
+		Tabs = {},
+		TabButtons = {}
+	}
 	
 	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "ModernGUI"
+	ScreenGui.Name = "ModernGUI_V2"
 	ScreenGui.ResetOnSpawn = false
 	ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
@@ -22,7 +26,7 @@ function UI_Module.CreateMain(hubTitle)
 	Stroke.Thickness = 1.5
 	Stroke.Color = Color3.fromRGB(45, 45, 50)
 
-	-- Сайдбар (Левая панель)
+	-- Сайдбар
 	local SidebarContainer = Instance.new("Frame")
 	SidebarContainer.Size = UDim2.new(0, 160, 1, 0)
 	SidebarContainer.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
@@ -41,6 +45,7 @@ function UI_Module.CreateMain(hubTitle)
 	local SideLayout = Instance.new("UIListLayout", SidebarScroll)
 	SideLayout.Padding = UDim.new(0, 5)
 	SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	SideLayout.SortOrder = Enum.SortOrder.LayoutOrder -- Важно для Settings внизу
 
 	SideLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SideLayout.AbsoluteContentSize.Y)
@@ -55,20 +60,28 @@ function UI_Module.CreateMain(hubTitle)
 	TitleLabel.BackgroundTransparency = 1
 	TitleLabel.Parent = SidebarContainer
 
-	-- Контейнер для страниц (Правая часть)
 	local PagesFolder = Instance.new("Frame")
 	PagesFolder.Size = UDim2.new(1, -175, 1, -15)
 	PagesFolder.Position = UDim2.new(0, 170, 0, 10)
 	PagesFolder.BackgroundTransparency = 1
 	PagesFolder.Parent = Main
 
-	local ActiveTab = nil
+	local ActiveTabFrame = nil
+
+	-- Функция обновления темы
+	local function UpdateTheme()
+		for _, btn in pairs(Library.TabButtons) do
+			if btn:GetAttribute("Active") then
+				TweenService:Create(btn, TweenInfo.new(0.3), {BackgroundColor3 = Library.AccentColor}):Play()
+			end
+		end
+		-- Тут можно добавить обновление других элементов, если нужно
+	end
 
 	-- МЕТОД: Создание вкладки
-	function Library:CreateTab(tabName)
+	function Library:CreateTab(tabName, isSettings)
 		local TabMethods = {}
 		
-		-- Кнопка переключения
 		local TabBtn = Instance.new("TextButton")
 		TabBtn.Size = UDim2.new(0.95, 0, 0, 36)
 		TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -77,13 +90,11 @@ function UI_Module.CreateMain(hubTitle)
 		TabBtn.Font = Enum.Font.GothamMedium
 		TabBtn.TextSize = 13
 		TabBtn.Parent = SidebarScroll
+		TabBtn.LayoutOrder = isSettings and 9999 or #SidebarScroll:GetChildren()
 		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
 		
-		local BtnStroke = Instance.new("UIStroke", TabBtn)
-		BtnStroke.Color = Color3.fromRGB(50, 50, 55)
-		BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		table.insert(Library.TabButtons, TabBtn)
 
-		-- Фрейм страницы
 		local Page = Instance.new("ScrollingFrame")
 		Page.Name = tabName .. "_Page"
 		Page.Size = UDim2.new(1, 0, 1, 0)
@@ -101,7 +112,6 @@ function UI_Module.CreateMain(hubTitle)
 			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10)
 		end)
 
-		-- Авто-заголовок
 		local Header = Instance.new("TextLabel")
 		Header.Size = UDim2.new(1, 0, 0, 40)
 		Header.Text = tabName
@@ -114,25 +124,23 @@ function UI_Module.CreateMain(hubTitle)
 
 		TabBtn.MouseButton1Click:Connect(function()
 			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-			for _, b in pairs(SidebarScroll:GetChildren()) do
-				if b:IsA("TextButton") then
-					TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30, 30, 35), TextColor3 = Color3.fromRGB(180, 180, 185)}):Play()
-				end
+			for _, b in pairs(Library.TabButtons) do
+				b:SetAttribute("Active", false)
+				TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30, 30, 35), TextColor3 = Color3.fromRGB(180, 180, 185)}):Play()
 			end
 			Page.Visible = true
-			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(60, 90, 255), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+			TabBtn:SetAttribute("Active", true)
+			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Library.AccentColor, TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 		end)
 
-		if not ActiveTab then
-			ActiveTab = Page
+		if not ActiveTabFrame and not isSettings then
+			ActiveTabFrame = Page
 			Page.Visible = true
-			TabBtn.BackgroundColor3 = Color3.fromRGB(60, 90, 255)
+			TabBtn:SetAttribute("Active", true)
+			TabBtn.BackgroundColor3 = Library.AccentColor
 			TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		end
 
-		--- ЭЛЕМЕНТЫ ВКЛАДКИ ---
-
-		-- 1. Текст с кнопкой справа
 		function TabMethods:AddButtonRow(label, btnLabel, callback)
 			local Row = Instance.new("Frame")
 			Row.Size = UDim2.new(1, -10, 0, 44)
@@ -159,11 +167,9 @@ function UI_Module.CreateMain(hubTitle)
 			Btn.Font = Enum.Font.GothamBold
 			Btn.Parent = Row
 			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-			
 			Btn.MouseButton1Click:Connect(callback)
 		end
 
-		-- 2. Текст с кнопкой и под-скроллом
 		function TabMethods:AddComplexRow(label, btnLabel, scrollHeight, callback)
 			local Container = Instance.new("Frame")
 			Container.Size = UDim2.new(1, -10, 0, 50 + scrollHeight)
@@ -191,8 +197,9 @@ function UI_Module.CreateMain(hubTitle)
 			Btn.Position = UDim2.new(0.7, 0, 0.5, -14)
 			Btn.BackgroundColor3 = Color3.fromRGB(30, 160, 100)
 			Btn.Text = btnLabel
+			Btn.TextColor3 = Color3.new(1,1,1)
 			Btn.Parent = Top
-			Instance.new("UICorner", Btn)
+			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
 			local InnerScroll = Instance.new("ScrollingFrame")
 			InnerScroll.Size = UDim2.new(1, -20, 0, scrollHeight - 10)
@@ -201,13 +208,11 @@ function UI_Module.CreateMain(hubTitle)
 			InnerScroll.ScrollBarThickness = 2
 			InnerScroll.Parent = Container
 			Instance.new("UICorner", InnerScroll)
-			
 			Instance.new("UIListLayout", InnerScroll).Padding = UDim.new(0, 3)
 
 			Btn.MouseButton1Click:Connect(function() callback(InnerScroll) end)
 		end
 
-		-- 3. Обычный текст
 		function TabMethods:AddLabel(text)
 			local L = Instance.new("TextLabel")
 			L.Size = UDim2.new(1, -10, 0, 22)
@@ -222,6 +227,30 @@ function UI_Module.CreateMain(hubTitle)
 
 		return TabMethods
 	end
+
+	-- Вшитая вкладка Настроек
+	local Settings = Library:CreateTab("Settings", true)
+	Settings:AddLabel("Настройка интерфейса:")
+	
+	Settings:AddButtonRow("Тема: Синий (Default)", "Выбрать", function()
+		Library.AccentColor = Color3.fromRGB(60, 90, 255)
+		UpdateTheme()
+	end)
+	
+	Settings:AddButtonRow("Тема: Красный", "Выбрать", function()
+		Library.AccentColor = Color3.fromRGB(255, 60, 60)
+		UpdateTheme()
+	end)
+	
+	Settings:AddButtonRow("Тема: Зеленый", "Выбрать", function()
+		Library.AccentColor = Color3.fromRGB(60, 255, 120)
+		UpdateTheme()
+	end)
+
+	Settings:AddButtonRow("Тема: Пурпурный", "Выбрать", function()
+		Library.AccentColor = Color3.fromRGB(180, 60, 255)
+		UpdateTheme()
+	end)
 
 	return Library
 end
