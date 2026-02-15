@@ -42,6 +42,7 @@ function UI_Module.CreateMain(hubTitle)
 	-- Главное окно
 	local Main = Instance.new("Frame")
 	Main.Name = "MainFrame"
+	Main.Draggable = true
 	Main.Size = UDim2.new(0, 630, 0, 430)
 	Main.Position = UDim2.new(0.5, -315, 0.5, -215)
 	Main.BackgroundColor3 = CurrentTheme.Main
