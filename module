@@ -1,18 +1,17 @@
 local GuiModule = {}
 
--- Сервисы
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 local DEFAULT_SETTINGS = {
-	MainColor = Color3.fromRGB(18, 18, 22),
-	SecondaryColor = Color3.fromRGB(28, 28, 32),
-	AccentColor = Color3.fromRGB(0, 160, 255),
-	TextColor = Color3.fromRGB(255, 255, 255),
-	ButtonColor = Color3.fromRGB(45, 45, 50),
-	ButtonHoverColor = Color3.fromRGB(60, 60, 65),
+	MainColor = Color3.fromRGB(20, 20, 25),
+	SecondaryColor = Color3.fromRGB(35, 35, 40),
+	AccentColor = Color3.fromRGB(60, 160, 240),
+	TextColor = Color3.fromRGB(240, 240, 240),
+	ButtonColor = Color3.fromRGB(50, 50, 55),
+	ButtonHoverColor = Color3.fromRGB(70, 70, 80),
 	Font = Enum.Font.GothamMedium,
 	TextSize = 14,
 	CornerRadius = UDim.new(0, 10),
@@ -26,14 +25,12 @@ function GuiModule.new(settings)
 		if settings[k] == nil then settings[k] = v end
 	end
 
-	-- Создаем контейнер
+	-- Автоматическое создание контейнера
 	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "CustomGuiSystem"
+	screenGui.Name = "CustomLibrary_" .. math.random(100, 999)
 	screenGui.ResetOnSpawn = false
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent = player:WaitForChild("PlayerGui")
 
-	-- Основной фрейм
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Size = UDim2.new(0, settings.Width, 0, settings.Height)
 	mainFrame.Position = UDim2.new(0.5, -settings.Width/2, 0.5, -settings.Height/2)
@@ -43,155 +40,118 @@ function GuiModule.new(settings)
 
 	Instance.new("UICorner", mainFrame).CornerRadius = settings.CornerRadius
 	local stroke = Instance.new("UIStroke", mainFrame)
-	stroke.Thickness = 1.5
-	stroke.Color = settings.AccentColor
-	stroke.Transparency = 0.6
+	stroke.Color, stroke.Thickness, stroke.Transparency = settings.AccentColor, 1.5, 0.6
 
-	-- Левая панель (Зона для перетаскивания)
-	local leftPanel = Instance.new("Frame")
+	-- Панели
+	local leftPanel = Instance.new("Frame", mainFrame)
 	leftPanel.Size = UDim2.new(0, 160, 1, 0)
 	leftPanel.BackgroundColor3 = settings.SecondaryColor
 	leftPanel.BorderSizePixel = 0
-	leftPanel.Parent = mainFrame
 	Instance.new("UICorner", leftPanel).CornerRadius = settings.CornerRadius
 
-	local tabsScrolling = Instance.new("ScrollingFrame")
+	local tabsScrolling = Instance.new("ScrollingFrame", leftPanel)
 	tabsScrolling.Size = UDim2.new(1, -10, 1, -20)
 	tabsScrolling.Position = UDim2.new(0, 5, 0, 10)
-	tabsScrolling.BackgroundTransparency = 1
-	tabsScrolling.ScrollBarThickness = 2
-	tabsScrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
-	tabsScrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	tabsScrolling.Parent = leftPanel
-
+	tabsScrolling.BackgroundTransparency, tabsScrolling.BorderSizePixel = 1, 0
+	tabsScrolling.ScrollBarThickness, tabsScrolling.CanvasSize = 0, UDim2.new(0,0,0,0)
+	
 	local tabsLayout = Instance.new("UIListLayout", tabsScrolling)
-	tabsLayout.Padding = UDim.new(0, 5)
-	tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	tabsLayout.Padding, tabsLayout.SortOrder = UDim.new(0, 5), Enum.SortOrder.LayoutOrder
 
-	-- Правая панель
-	local rightPanel = Instance.new("Frame")
+	local rightPanel = Instance.new("Frame", mainFrame)
 	rightPanel.Size = UDim2.new(1, -160, 1, 0)
 	rightPanel.Position = UDim2.new(0, 160, 0, 0)
 	rightPanel.BackgroundTransparency = 1
-	rightPanel.Parent = mainFrame
 
-	local funcScrolling = Instance.new("ScrollingFrame")
-	funcScrolling.Size = UDim2.new(1, -10, 1, -20)
-	funcScrolling.Position = UDim2.new(0, 5, 0, 10)
-	funcScrolling.BackgroundTransparency = 1
-	funcScrolling.ScrollBarThickness = 2
-	funcScrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	funcScrolling.Parent = rightPanel
+	local functionsScrolling = Instance.new("ScrollingFrame", rightPanel)
+	functionsScrolling.Size = UDim2.new(1, -10, 1, -20)
+	functionsScrolling.Position = UDim2.new(0, 5, 0, 10)
+	functionsScrolling.BackgroundTransparency, functionsScrolling.BorderSizePixel = 1, 0
+	functionsScrolling.ScrollBarThickness = 2
+	functionsScrolling.ScrollBarImageColor3 = settings.AccentColor
+	
+	local functionsLayout = Instance.new("UIListLayout", functionsScrolling)
+	functionsLayout.Padding, functionsLayout.SortOrder = UDim.new(0, 6), Enum.SortOrder.LayoutOrder
 
-	local funcLayout = Instance.new("UIListLayout", funcScrolling)
-	funcLayout.Padding = UDim.new(0, 8)
-	funcLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
+	-- Данные
 	local tabsData = {}
 	local currentTab = nil
 
-	-- Логика переключения
 	local function updateDisplay()
-		for _, child in pairs(funcScrolling:GetChildren()) do
-			if child:IsA("Frame") then child.Visible = false end
+		for _, child in pairs(functionsScrolling:GetChildren()) do
+			if child:IsA("Frame") then child:Destroy() end
 		end
 		if currentTab and tabsData[currentTab] then
-			for _, item in pairs(tabsData[currentTab].items) do
-				item.Visible = true
+			for _, func in ipairs(tabsData[currentTab].functions) do
+				local fFrame = Instance.new("Frame", functionsScrolling)
+				fFrame.Size, fFrame.BackgroundColor3 = UDim2.new(1, -10, 0, 40), settings.SecondaryColor
+				fFrame.BackgroundTransparency = 0.4
+				Instance.new("UICorner", fFrame).CornerRadius = UDim.new(0, 6)
+
+				local label = Instance.new("TextLabel", fFrame)
+				label.Size = UDim2.new(0.7, 0, 1, 0)
+				label.Position = UDim2.new(0, 10, 0, 0)
+				label.Text, label.TextColor3, label.Font = func.name, settings.TextColor, settings.Font
+				label.TextSize, label.BackgroundTransparency, label.TextXAlignment = settings.TextSize, 1, 0
+
+				local btn = Instance.new("TextButton", fFrame)
+				btn.Size, btn.Position = UDim2.new(0.25, -5, 0.7, 0), UDim2.new(0.75, 0, 0.15, 0)
+				btn.BackgroundColor3, btn.Text, btn.TextColor3 = settings.ButtonColor, "RUN", settings.TextColor
+				btn.Font, btn.TextSize = settings.Font, 12
+				Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+				btn.MouseButton1Click:Connect(func.callback)
+				btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = settings.ButtonHoverColor}):Play() end)
+				btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = settings.ButtonColor}):Play() end)
 			end
 		end
 	end
 
-	-- Метод создания вкладки
-	function mainFrame:CreateTab(tabName)
-		local tabBtn = Instance.new("TextButton")
-		tabBtn.Size = UDim2.new(1, -10, 0, 35)
-		tabBtn.BackgroundColor3 = settings.ButtonColor
-		tabBtn.Text = tabName
-		tabBtn.TextColor3 = settings.TextColor
-		tabBtn.Font = settings.Font
-		tabBtn.TextSize = 13
-		tabBtn.AutoButtonColor = false
-		tabBtn.Parent = tabsScrolling
-		Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+	-- Методы
+	function mainFrame:CreateTab(name)
+		local btn = Instance.new("TextButton", tabsScrolling)
+		btn.Size, btn.BackgroundColor3, btn.Text = UDim2.new(1, 0, 0, 32), settings.SecondaryColor, name
+		btn.TextColor3, btn.Font, btn.TextSize = settings.TextColor, settings.Font, settings.TextSize
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-		tabsData[tabName] = {button = tabBtn, items = {}}
-
-		tabBtn.MouseButton1Click:Connect(function()
+		tabsData[name] = {functions = {}, button = btn}
+		btn.MouseButton1Click:Connect(function()
 			if currentTab then 
-				TweenService:Create(tabsData[currentTab].button, TweenInfo.new(0.2), {BackgroundColor3 = settings.ButtonColor}):Play()
+				TweenService:Create(tabsData[currentTab].button, TweenInfo.new(0.2), {BackgroundColor3 = settings.SecondaryColor}):Play()
 			end
-			currentTab = tabName
-			TweenService:Create(tabBtn, TweenInfo.new(0.2), {BackgroundColor3 = settings.AccentColor}):Play()
+			currentTab = name
+			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = settings.AccentColor}):Play()
 			updateDisplay()
 		end)
+		if not currentTab then btn.MouseButton1Click:Fire() end
+	end
 
-		if not currentTab then 
-			currentTab = tabName
-			tabBtn.BackgroundColor3 = settings.AccentColor
+	function mainFrame:AddFunction(tab, name, cb)
+		if tabsData[tab] then 
+			table.insert(tabsData[tab].functions, {name = name, callback = cb})
+			if currentTab == tab then updateDisplay() end
 		end
-		return tabName
 	end
 
-	-- Метод добавления функции
-	function mainFrame:AddFunction(tabName, funcName, callback)
-		local fFrame = Instance.new("Frame")
-		fFrame.Size = UDim2.new(1, -10, 0, 40)
-		fFrame.BackgroundColor3 = settings.SecondaryColor
-		fFrame.Visible = (currentTab == tabName)
-		fFrame.Parent = funcScrolling
-		Instance.new("UICorner", fFrame).CornerRadius = UDim.new(0, 6)
-
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(0.7, 0, 1, 0)
-		label.Position = UDim2.new(0, 10, 0, 0)
-		label.Text = funcName
-		label.TextColor3 = settings.TextColor
-		label.BackgroundTransparency = 1
-		label.TextXAlignment = Enum.TextXAlignment.Left
-		label.Font = settings.Font
-		label.Parent = fFrame
-
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0.3, -10, 0.7, 0)
-		btn.Position = UDim2.new(0.7, 5, 0.15, 0)
-		btn.BackgroundColor3 = settings.AccentColor
-		btn.Text = "RUN"
-		btn.TextColor3 = settings.TextColor
-		btn.Font = settings.Font
-		btn.Parent = fFrame
-		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-
-		btn.MouseButton1Click:Connect(function()
-			task.spawn(callback)
-			btn.Text = "..."
-			task.wait(0.2)
-			btn.Text = "RUN"
-		end)
-
-		table.insert(tabsData[tabName].items, fFrame)
-	end
-
-	-- Перетаскивание (только за LeftPanel)
-	local dragging, dragInput, dragStart, startPos
-	leftPanel.InputBegan:Connect(function(input)
+	-- Перетаскивание (за левую панель или пустые зоны)
+	local dragging, dragStart, startPos
+	mainFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = mainFrame.Position
+			dragging, dragStart, startPos = true, input.Position, mainFrame.Position
 		end
 	end)
-
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - dragStart
 			mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
-
-	leftPanel.InputEnded:Connect(function(input)
+	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 	end)
+
+	function mainFrame:Show() mainFrame.Visible = true end
+	function mainFrame:Hide() mainFrame.Visible = false end
 
 	return mainFrame
 end
