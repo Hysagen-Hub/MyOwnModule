@@ -155,46 +155,88 @@ function UI_Module.CreateMain(hubTitle)
     function TabBase:AddSlider(text, min, max, default, callback)
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
-        Row.Size = UDim2.new(1, -10, 0, 65)
+        Row.Size = UDim2.new(1, -10, 0, 75) -- Немного увеличил высоту
         Row.BackgroundColor3 = CurrentTheme.Secondary
         Instance.new("UICorner", Row)
-
+    
         local T = Instance.new("TextLabel", Row)
         T.Size = UDim2.new(1, 0, 0, 30)
         T.Position = UDim2.new(0, 15, 0, 5)
         T.Text = text .. ": " .. default
         T.TextColor3 = CurrentTheme.Text
         T.BackgroundTransparency = 1
+        T.Font = Enum.Font.Gotham
         T.TextXAlignment = Enum.TextXAlignment.Left
-
+    
         local SliderBack = Instance.new("Frame", Row)
         SliderBack.Name = "SliderBack"
-        SliderBack.Size = UDim2.new(1, -30, 0, 6)
-        SliderBack.Position = UDim2.new(0, 15, 0, 45)
+        SliderBack.Size = UDim2.new(1, -80, 0, 6) -- Уменьшил ширину, чтобы влезли кнопки
+        SliderBack.Position = UDim2.new(0, 40, 0, 50)
         SliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         Instance.new("UICorner", SliderBack)
-
+    
         local SliderFill = Instance.new("Frame", SliderBack)
         SliderFill.Name = "SliderFill"
         SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
         SliderFill.BackgroundColor3 = CurrentTheme.Accent
         Instance.new("UICorner", SliderFill)
-
-        local dragging = false
-        local function Update()
-            local mouseX = UserInputService:GetMouseLocation().X
-            local barX = SliderBack.AbsolutePosition.X
-            local barW = SliderBack.AbsoluteSize.X
-            local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            local val = math.floor(min + (max - min) * perc)
-            SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. val
-            callback(val)
+    
+        -- Кнопки управления
+        local function CreateNavBtn(char, pos)
+            local B = Instance.new("TextButton", Row)
+            B.Name = "ActionBtn"
+            B.Size = UDim2.new(0, 25, 0, 25)
+            B.Position = pos
+            B.BackgroundColor3 = CurrentTheme.Accent
+            B.Text = char
+            B.TextColor3 = CurrentTheme.BtnText
+            B.Font = Enum.Font.GothamBold
+            Instance.new("UICorner", B)
+            return B
         end
-
-        SliderBack.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true Update() end end)
-        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
-        UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update() end end)
+    
+        local BtnMinus = CreateNavBtn("-", UDim2.new(0, 10, 0, 40))
+        local BtnPlus = CreateNavBtn("+", UDim2.new(1, -35, 0, 40))
+    
+        local currentVal = default
+    
+        local function Update(manualValue)
+            if manualValue then
+                currentVal = math.clamp(manualValue, min, max)
+            else
+                local mouseX = UserInputService:GetMouseLocation().X
+                local barX = SliderBack.AbsolutePosition.X
+                local barW = SliderBack.AbsoluteSize.X
+                local perc = math.clamp((mouseX - barX) / barW, 0, 1)
+                currentVal = math.floor(min + (max - min) * perc)
+            end
+            
+            local displayPerc = (currentVal - min) / (max - min)
+            SliderFill.Size = UDim2.new(displayPerc, 0, 1, 0)
+            T.Text = text .. ": " .. currentVal
+            callback(currentVal)
+        end
+    
+        -- Логика кнопок
+        BtnMinus.MouseButton1Click:Connect(function() Update(currentVal - 1) end)
+        BtnPlus.MouseButton1Click:Connect(function() Update(currentVal + 1) end)
+    
+        -- Логика перетаскивания
+        local dragging = false
+        SliderBack.InputBegan:Connect(function(i) 
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then 
+                dragging = true 
+                Update() 
+            end 
+        end)
+        UserInputService.InputEnded:Connect(function(i) 
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end 
+        end)
+        UserInputService.InputChanged:Connect(function(i) 
+            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then 
+                Update() 
+            end 
+        end)
     end
 
     function Library:CreateTab(name, isSettings)
