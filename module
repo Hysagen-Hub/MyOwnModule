@@ -145,7 +145,6 @@ function UI_Module.CreateMain(hubTitle)
         CurrentTheme = theme
         local tInfo = TweenInfo.new(0.4)
         
-        -- Обновление всех объектов в интерфейсе
         for _, obj in pairs(ScreenGui:GetDescendants()) do
             if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
             elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
@@ -158,7 +157,6 @@ function UI_Module.CreateMain(hubTitle)
             end
         end
 
-        -- Специальное обновление кнопок табов в реальном времени
         for _, btn in pairs(Library.TabButtons) do
             if btn:GetAttribute("Active") == true then
                 TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Accent, TextColor3 = theme.BtnText}):Play()
@@ -169,6 +167,7 @@ function UI_Module.CreateMain(hubTitle)
     end
 
     function TabBase:AddLabel(text)
+        self.Count = self.Count + 1
         local L = Instance.new("TextLabel", self.Page)
         L.Size = UDim2.new(1, -10, 0, 30)
         L.BackgroundTransparency = 1
@@ -177,13 +176,16 @@ function UI_Module.CreateMain(hubTitle)
         L.Font = Enum.Font.GothamSemibold
         L.TextSize = 15
         L.TextXAlignment = Enum.TextXAlignment.Left
+        L.LayoutOrder = self.Count
     end
 
     function TabBase:AddButtonRow(text, btnText, callback)
+        self.Count = self.Count + 1
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
         Row.Size = UDim2.new(1, -10, 0, 55)
         Row.BackgroundColor3 = CurrentTheme.Secondary
+        Row.LayoutOrder = self.Count
         Instance.new("UICorner", Row)
         
         local L = Instance.new("TextLabel", Row)
@@ -210,10 +212,12 @@ function UI_Module.CreateMain(hubTitle)
     end
 
     function TabBase:AddSlider(text, min, max, default, callback)
+        self.Count = self.Count + 1
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
         Row.Size = UDim2.new(1, -10, 0, 80)
         Row.BackgroundColor3 = CurrentTheme.Secondary
+        Row.LayoutOrder = self.Count
         Instance.new("UICorner", Row)
 
         local T = Instance.new("TextLabel", Row)
@@ -249,42 +253,32 @@ function UI_Module.CreateMain(hubTitle)
         KnobStroke.Color = Color3.new(0,0,0)
         KnobStroke.Transparency = 0.5
 
-        local currentVal = default
-        
         local function UpdateFromMouse(mouseX)
             local barX = SliderBack.AbsolutePosition.X
             local barW = SliderBack.AbsoluteSize.X
             local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            currentVal = math.floor(min + (max - min) * perc)
+            local val = math.floor(min + (max - min) * perc)
             SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. currentVal
-            callback(currentVal)
+            T.Text = text .. ": " .. val
+            callback(val)
         end
 
         local dragging = false
-        
         SliderBack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                _G.IsDraggingSlider = true
-                UpdateFromMouse(input.Position.X)
+                dragging = true; _G.IsDraggingSlider = true; UpdateFromMouse(input.Position.X)
             end
         end)
-        
         SliderKnob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                _G.IsDraggingSlider = true
+                dragging = true; _G.IsDraggingSlider = true
             end
         end)
-        
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-                _G.IsDraggingSlider = false
+                dragging = false; _G.IsDraggingSlider = false
             end
         end)
-        
         UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 UpdateFromMouse(input.Position.X)
@@ -294,6 +288,8 @@ function UI_Module.CreateMain(hubTitle)
 
     function Library:CreateTab(name, isSettings)
         local NewTab = setmetatable({}, TabBase)
+        NewTab.Count = 0 -- Счётчик элементов
+        
         local TabBtn = Instance.new("TextButton", SidebarScroll)
         TabBtn.Name = "TabBtn"
         TabBtn.Size = UDim2.new(0.95, 0, 0, 42)
@@ -310,7 +306,11 @@ function UI_Module.CreateMain(hubTitle)
         Page.BackgroundTransparency = 1
         Page.Visible = false
         Page.ScrollBarThickness = 0
-        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
+        Page.Name = "Page_"..name
+        
+        local List = Instance.new("UIListLayout", Page)
+        List.Padding = UDim.new(0, 10)
+        List.SortOrder = Enum.SortOrder.LayoutOrder
 
         NewTab.Page = Page
 
