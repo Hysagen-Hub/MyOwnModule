@@ -25,7 +25,7 @@ function GuiModule.new(settings)
 		if settings[k] == nil then settings[k] = v end
 	end
 
-	-- Объект, который мы вернем (со всеми методами)
+	-- Основная таблица библиотеки (обертка)
 	local Library = {}
 
 	local screenGui = Instance.new("ScreenGui")
@@ -34,20 +34,19 @@ function GuiModule.new(settings)
 	screenGui.Parent = player:WaitForChild("PlayerGui")
 
 	local mainFrame = Instance.new("Frame")
-	mainFrame.Name = "MainFrame"
 	mainFrame.Size = UDim2.new(0, settings.Width, 0, settings.Height)
 	mainFrame.Position = UDim2.new(0.5, -settings.Width/2, 0.5, -settings.Height/2)
 	mainFrame.BackgroundColor3 = settings.MainColor
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Parent = screenGui
 	
-	Library.MainFrame = mainFrame -- сохраняем ссылку
+	Library.MainFrame = mainFrame -- Ссылка на сам фрейм, если понадобится
 
 	Instance.new("UICorner", mainFrame).CornerRadius = settings.CornerRadius
 	local stroke = Instance.new("UIStroke", mainFrame)
 	stroke.Color, stroke.Thickness, stroke.Transparency = settings.AccentColor, 1.5, 0.6
 
-	-- Левая панель
+	-- Панели
 	local leftPanel = Instance.new("Frame", mainFrame)
 	leftPanel.Size = UDim2.new(0, 160, 1, 0)
 	leftPanel.BackgroundColor3 = settings.SecondaryColor
@@ -63,7 +62,6 @@ function GuiModule.new(settings)
 	local tabsLayout = Instance.new("UIListLayout", tabsScrolling)
 	tabsLayout.Padding, tabsLayout.SortOrder = UDim.new(0, 5), Enum.SortOrder.LayoutOrder
 
-	-- Правая панель
 	local rightPanel = Instance.new("Frame", mainFrame)
 	rightPanel.Size = UDim2.new(1, -160, 1, 0)
 	rightPanel.Position = UDim2.new(0, 160, 0, 0)
@@ -75,19 +73,22 @@ function GuiModule.new(settings)
 	-- === МЕТОДЫ БИБЛИОТЕКИ ===
 
 	function Library:CreateTab(name)
-		local tabObj = {} -- Методы для конкретной страницы
+		local Tab = {} -- Объект конкретной страницы
 
+		-- Кнопка переключения
 		local btn = Instance.new("TextButton", tabsScrolling)
 		btn.Size, btn.BackgroundColor3, btn.Text = UDim2.new(1, 0, 0, 32), settings.SecondaryColor, name
 		btn.TextColor3, btn.Font, btn.TextSize = settings.TextColor, settings.Font, settings.TextSize
 		btn.AutoButtonColor = false
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
+		-- Контейнер страницы
 		local pageFrame = Instance.new("Frame", rightPanel)
 		pageFrame.Size = UDim2.new(1, 0, 1, 0)
 		pageFrame.BackgroundTransparency = 1
 		pageFrame.Visible = false
 
+		-- Заголовок страницы (равен тексту кнопки)
 		local header = Instance.new("TextLabel", pageFrame)
 		header.Size = UDim2.new(1, -20, 0, 40)
 		header.Position = UDim2.new(0, 10, 0, 5)
@@ -98,6 +99,7 @@ function GuiModule.new(settings)
 		header.BackgroundTransparency = 1
 		header.TextXAlignment = Enum.TextXAlignment.Left
 
+		-- Основной скролл страницы
 		local contentScroll = Instance.new("ScrollingFrame", pageFrame)
 		contentScroll.Size = UDim2.new(1, -10, 1, -55)
 		contentScroll.Position = UDim2.new(0, 5, 0, 50)
@@ -123,8 +125,10 @@ function GuiModule.new(settings)
 		tabsData[name] = {button = btn, page = pageFrame}
 		if not currentTab then task.defer(function() btn.MouseButton1Click:Fire() end) end
 
-		-- Внутренние методы страницы
-		function tabObj:AddButton(text, btnText, callback)
+		-- === МЕТОДЫ СТРАНИЦЫ ===
+
+		-- 1. Текст с кнопкой справа
+		function Tab:AddButton(text, btnText, callback)
 			local item = Instance.new("Frame", contentScroll)
 			item.Size, item.BackgroundColor3 = UDim2.new(1, -15, 0, 40), settings.SecondaryColor
 			item.BackgroundTransparency = 0.4
@@ -146,7 +150,8 @@ function GuiModule.new(settings)
 			return item
 		end
 
-		function tabObj:AddComplexSection(text, btnText, callback)
+		-- 2. Текст с кнопкой + ScrollingFrame снизу
+		function Tab:AddComplexSection(text, btnText, callback)
 			local item = Instance.new("Frame", contentScroll)
 			item.Size, item.BackgroundColor3 = UDim2.new(1, -15, 0, 130), settings.SecondaryColor
 			item.BackgroundTransparency = 0.4
@@ -177,7 +182,8 @@ function GuiModule.new(settings)
 			return item, innerScroll
 		end
 
-		function tabObj:AddLabel(text)
+		-- 3. Обычный текст
+		function Tab:AddLabel(text)
 			local label = Instance.new("TextLabel", contentScroll)
 			label.Size = UDim2.new(1, -20, 0, 25)
 			label.BackgroundTransparency = 1
@@ -187,7 +193,7 @@ function GuiModule.new(settings)
 			return label
 		end
 
-		return tabObj
+		return Tab
 	end
 
 	-- Перетаскивание
