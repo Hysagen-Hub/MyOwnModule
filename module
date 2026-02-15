@@ -5,226 +5,245 @@ local Players = game:GetService("Players")
 
 -- Логика Drag (Перетаскивание)
 local function MakeDraggable(gui)
-	local dragging, dragInput, dragStart, startPos
-	gui.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = gui.Position
-		end
-	end)
-	gui.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
-	end)
-	game:GetService("RunService").RenderStepped:Connect(function()
-		if dragging and dragInput then
-			local delta = dragInput.Position - dragStart
-			gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+    local dragging, dragInput, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+        end
+    end)
+    gui.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+    end)
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if dragging and dragInput then
+            local delta = dragInput.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 end
 
 function UI_Module.CreateMain(hubTitle)
-	local Library = { TabButtons = {} }
-	local TabBase = {}
-	TabBase.__index = TabBase
-	
-	local Themes = {
-		["Black (Default)"] = {
-			Main = Color3.fromRGB(12, 12, 12),
-			Sidebar = Color3.fromRGB(18, 18, 18),
-			Stroke = Color3.fromRGB(35, 35, 35),
-			Accent = Color3.fromRGB(255, 255, 255),
-			Text = Color3.fromRGB(255, 255, 255),
-			Secondary = Color3.fromRGB(25, 25, 25),
-			BtnText = Color3.fromRGB(0, 0, 0)
-		},
-		["Orange Dream"] = {
-			Main = Color3.fromRGB(25, 18, 15),
-			Sidebar = Color3.fromRGB(35, 25, 20),
-			Stroke = Color3.fromRGB(75, 45, 30),
-			Accent = Color3.fromRGB(255, 140, 50),
-			Text = Color3.fromRGB(255, 230, 210),
-			Secondary = Color3.fromRGB(45, 35, 30),
-			BtnText = Color3.fromRGB(255, 255, 255)
-		}
-	}
-	
-	local CurrentTheme = Themes["Black (Default)"]
-	local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-	ScreenGui.Name = "Slider_Engine_V6"
-	ScreenGui.ResetOnSpawn = false
+    local Library = { TabButtons = {} }
+    local TabBase = {}
+    TabBase.__index = TabBase
+    
+    local Themes = {
+        ["Black (Default)"] = {
+            Main = Color3.fromRGB(12, 12, 12),
+            Sidebar = Color3.fromRGB(18, 18, 18),
+            Stroke = Color3.fromRGB(35, 35, 35),
+            Accent = Color3.fromRGB(255, 255, 255),
+            Text = Color3.fromRGB(255, 255, 255),
+            Secondary = Color3.fromRGB(25, 25, 25),
+            BtnText = Color3.fromRGB(0, 0, 0)
+        },
+        ["Orange Dream"] = {
+            Main = Color3.fromRGB(25, 18, 15),
+            Sidebar = Color3.fromRGB(35, 25, 20),
+            Stroke = Color3.fromRGB(75, 45, 30),
+            Accent = Color3.fromRGB(255, 140, 50),
+            Text = Color3.fromRGB(255, 230, 210),
+            Secondary = Color3.fromRGB(45, 35, 30),
+            BtnText = Color3.fromRGB(255, 255, 255)
+        }
+    }
+    
+    local CurrentTheme = Themes["Black (Default)"]
+    local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
+    ScreenGui.Name = "Nexus_Final_V7"
+    ScreenGui.ResetOnSpawn = false
 
-	local Main = Instance.new("Frame", ScreenGui)
-	Main.Name = "MainFrame"
-	Main.Size = UDim2.new(0, 630, 0, 430)
-	Main.Position = UDim2.new(0.5, -315, 0.5, -215)
-	Main.BackgroundColor3 = CurrentTheme.Main
-	Main.BorderSizePixel = 0
-	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
-	local MainStroke = Instance.new("UIStroke", Main)
-	MainStroke.Thickness = 2
-	MainStroke.Color = CurrentTheme.Stroke
-	
-	MakeDraggable(Main)
+    local Main = Instance.new("Frame", ScreenGui)
+    Main.Name = "MainFrame"
+    Main.Size = UDim2.new(0, 630, 0, 430)
+    Main.Position = UDim2.new(0.5, -315, 0.5, -215)
+    Main.BackgroundColor3 = CurrentTheme.Main
+    Main.BorderSizePixel = 0
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+    local MainStroke = Instance.new("UIStroke", Main)
+    MainStroke.Thickness = 2
+    MainStroke.Color = CurrentTheme.Stroke
+    
+    MakeDraggable(Main)
 
-	local Sidebar = Instance.new("Frame", Main)
-	Sidebar.Name = "Sidebar"
-	Sidebar.Size = UDim2.new(0, 175, 1, 0)
-	Sidebar.BackgroundColor3 = CurrentTheme.Sidebar
-	Sidebar.BorderSizePixel = 0
-	Instance.new("UICorner", Sidebar)
+    local Sidebar = Instance.new("Frame", Main)
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 175, 1, 0)
+    Sidebar.BackgroundColor3 = CurrentTheme.Sidebar
+    Sidebar.BorderSizePixel = 0
+    Instance.new("UICorner", Sidebar)
 
-	local SidebarScroll = Instance.new("ScrollingFrame", Sidebar)
-	SidebarScroll.Size = UDim2.new(1, -10, 1, -70)
-	SidebarScroll.Position = UDim2.new(0, 5, 0, 65)
-	SidebarScroll.BackgroundTransparency = 1
-	SidebarScroll.ScrollBarThickness = 0
-	Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
+    local SidebarScroll = Instance.new("ScrollingFrame", Sidebar)
+    SidebarScroll.Size = UDim2.new(1, -10, 1, -70)
+    SidebarScroll.Position = UDim2.new(0, 5, 0, 65)
+    SidebarScroll.BackgroundTransparency = 1
+    SidebarScroll.ScrollBarThickness = 0
+    Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
-	local PagesFolder = Instance.new("Frame", Main)
-	PagesFolder.Size = UDim2.new(1, -195, 1, -20)
-	PagesFolder.Position = UDim2.new(0, 185, 0, 10)
-	PagesFolder.BackgroundTransparency = 1
+    local Title = Instance.new("TextLabel", Sidebar)
+    Title.Size = UDim2.new(1, 0, 0, 60)
+    Title.Text = hubTitle
+    Title.TextColor3 = CurrentTheme.Text
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 16
+    Title.BackgroundTransparency = 1
 
-	-- Функция смены темы
-	local function ApplyTheme(theme)
-		CurrentTheme = theme
-		local tInfo = TweenInfo.new(0.4)
-		for _, obj in pairs(ScreenGui:GetDescendants()) do
-			if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
-			elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
-			elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
-			elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-			elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" then 
-				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
-				if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
-			elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
-			end
-		end
-	end
+    local PagesFolder = Instance.new("Frame", Main)
+    PagesFolder.Size = UDim2.new(1, -195, 1, -20)
+    PagesFolder.Position = UDim2.new(0, 185, 0, 10)
+    PagesFolder.BackgroundTransparency = 1
 
-	-- МЕТОД: AddSlider
-	function TabBase:AddSlider(text, min, max, default, callback)
-		local Row = Instance.new("Frame", self.Page)
-		Row.Name = "Row"
-		Row.Size = UDim2.new(1, -10, 0, 65)
-		Row.BackgroundColor3 = CurrentTheme.Secondary
-		Instance.new("UICorner", Row)
+    local function ApplyTheme(theme)
+        CurrentTheme = theme
+        local tInfo = TweenInfo.new(0.4)
+        for _, obj in pairs(ScreenGui:GetDescendants()) do
+            if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
+            elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
+            elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
+            elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
+            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" then 
+                TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
+                if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
+            elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
+            end
+        end
+    end
 
-		local Title = Instance.new("TextLabel", Row)
-		Title.Size = UDim2.new(1, 0, 0, 30)
-		Title.Position = UDim2.new(0, 15, 0, 0)
-		Title.Text = text .. " : " .. default
-		Title.TextColor3 = CurrentTheme.Text
-		Title.BackgroundTransparency = 1
-		Title.TextXAlignment = Enum.TextXAlignment.Left
-		Title.Font = Enum.Font.Gotham
+    -- МЕТОДЫ ВКЛАДОК
+    function TabBase:AddLabel(text)
+        local L = Instance.new("TextLabel", self.Page)
+        L.Size = UDim2.new(1, -10, 0, 25)
+        L.BackgroundTransparency = 1
+        L.Text = text
+        L.TextColor3 = CurrentTheme.Text
+        L.Font = Enum.Font.Gotham
+        L.TextXAlignment = Enum.TextXAlignment.Left
+    end
 
-		local SliderBack = Instance.new("Frame", Row)
-		SliderBack.Name = "SliderBack"
-		SliderBack.Size = UDim2.new(1, -30, 0, 6)
-		SliderBack.Position = UDim2.new(0, 15, 0, 45)
-		SliderBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-		Instance.new("UICorner", SliderBack)
+    function TabBase:AddButtonRow(text, btnText, callback)
+        local Row = Instance.new("Frame", self.Page)
+        Row.Name = "Row"
+        Row.Size = UDim2.new(1, -10, 0, 48)
+        Row.BackgroundColor3 = CurrentTheme.Secondary
+        Instance.new("UICorner", Row)
+        
+        local L = Instance.new("TextLabel", Row)
+        L.Size = UDim2.new(0.6, 0, 1, 0)
+        L.Position = UDim2.new(0, 15, 0, 0)
+        L.Text = text
+        L.TextColor3 = CurrentTheme.Text
+        L.BackgroundTransparency = 1
+        L.TextXAlignment = Enum.TextXAlignment.Left
 
-		local SliderFill = Instance.new("Frame", SliderBack)
-		SliderFill.Name = "SliderFill"
-		SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-		SliderFill.BackgroundColor3 = CurrentTheme.Accent
-		Instance.new("UICorner", SliderFill)
+        local B = Instance.new("TextButton", Row)
+        B.Name = "ActionBtn"
+        B.Size = UDim2.new(0.3, 0, 0, 32)
+        B.Position = UDim2.new(0.65, 0, 0.5, -16)
+        B.BackgroundColor3 = CurrentTheme.Accent
+        B.Text = btnText
+        B.TextColor3 = CurrentTheme.BtnText
+        B.Font = Enum.Font.GothamBold
+        Instance.new("UICorner", B)
+        B.MouseButton1Click:Connect(callback)
+    end
 
-		local function UpdateSlider()
-			local mousePos = UserInputService:GetMouseLocation().X
-			local barPos = SliderBack.AbsolutePosition.X
-			local barSize = SliderBack.AbsoluteSize.X
-			local percent = math.clamp((mousePos - barPos) / barSize, 0, 1)
-			
-			local value = math.floor(min + (max - min) * percent)
-			SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-			Title.Text = text .. " : " .. value
-			callback(value)
-		end
+    function TabBase:AddSlider(text, min, max, default, callback)
+        local Row = Instance.new("Frame", self.Page)
+        Row.Name = "Row"
+        Row.Size = UDim2.new(1, -10, 0, 65)
+        Row.BackgroundColor3 = CurrentTheme.Secondary
+        Instance.new("UICorner", Row)
 
-		local dragging = false
-		SliderBack.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = true
-				UpdateSlider()
-			end
-		end)
-		UserInputService.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-		end)
-		UserInputService.InputChanged:Connect(function(input)
-			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-				UpdateSlider()
-			end
-		end)
-	end
+        local T = Instance.new("TextLabel", Row)
+        T.Size = UDim2.new(1, 0, 0, 30)
+        T.Position = UDim2.new(0, 15, 0, 5)
+        T.Text = text .. ": " .. default
+        T.TextColor3 = CurrentTheme.Text
+        T.BackgroundTransparency = 1
+        T.TextXAlignment = Enum.TextXAlignment.Left
 
-	-- (Остальные методы: CreateTab, AddLabel, AddButtonRow - такие же, как в V5)
-	function TabBase:AddLabel(text)
-		local L = Instance.new("TextLabel", self.Page)
-		L.Size = UDim2.new(1, -10, 0, 25)
-		L.BackgroundTransparency = 1
-		L.Text = text
-		L.TextColor3 = CurrentTheme.Text
-		L.Font = Enum.Font.Gotham
-		L.TextXAlignment = Enum.TextXAlignment.Left
-	end
+        local SliderBack = Instance.new("Frame", Row)
+        SliderBack.Name = "SliderBack"
+        SliderBack.Size = UDim2.new(1, -30, 0, 6)
+        SliderBack.Position = UDim2.new(0, 15, 0, 45)
+        SliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        Instance.new("UICorner", SliderBack)
 
-	function TabBase:AddButtonRow(text, btnText, callback)
-		local Row = Instance.new("Frame", self.Page)
-		Row.Name = "Row"
-		Row.Size = UDim2.new(1, -10, 0, 48)
-		Row.BackgroundColor3 = CurrentTheme.Secondary
-		Instance.new("UICorner", Row)
-		local L = Instance.new("TextLabel", Row)
-		L.Size = UDim2.new(0.6, 0, 1, 0)
-		L.Position = UDim2.new(0, 15, 0, 0)
-		L.Text = text
-		L.TextColor3 = CurrentTheme.Text
-		L.BackgroundTransparency = 1
-		L.TextXAlignment = Enum.TextXAlignment.Left
-		local B = Instance.new("TextButton", Row)
-		B.Name = "ActionBtn"
-		B.Size = UDim2.new(0.3, 0, 0, 32)
-		B.Position = UDim2.new(0.65, 0, 0.5, -16)
-		B.BackgroundColor3 = CurrentTheme.Accent
-		B.Text = btnText
-		B.TextColor3 = CurrentTheme.BtnText
-		Instance.new("UICorner", B)
-		B.MouseButton1Click:Connect(callback)
-	end
+        local SliderFill = Instance.new("Frame", SliderBack)
+        SliderFill.Name = "SliderFill"
+        SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        SliderFill.BackgroundColor3 = CurrentTheme.Accent
+        Instance.new("UICorner", SliderFill)
 
-	function Library:CreateTab(name, isSettings)
-		local NewTab = setmetatable({}, TabBase)
-		local TabBtn = Instance.new("TextButton", SidebarScroll)
-		TabBtn.Size = UDim2.new(0.95, 0, 0, 38)
-		TabBtn.BackgroundColor3 = CurrentTheme.Secondary
-		TabBtn.Text = name
-		TabBtn.TextColor3 = CurrentTheme.Text
-		TabBtn.Font = Enum.Font.GothamMedium
-		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
-		table.insert(Library.TabButtons, TabBtn)
-		local Page = Instance.new("ScrollingFrame", PagesFolder)
-		Page.Size = UDim2.new(1, 0, 1, 0)
-		Page.BackgroundTransparency = 1
-		Page.Visible = false
-		Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
-		NewTab.Page = Page
-		TabBtn.MouseButton1Click:Connect(function()
-			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-			Page.Visible = true
-		end)
-		return NewTab
-	end
+        local dragging = false
+        local function Update()
+            local mouseX = UserInputService:GetMouseLocation().X
+            local barX = SliderBack.AbsolutePosition.X
+            local barW = SliderBack.AbsoluteSize.X
+            local perc = math.clamp((mouseX - barX) / barW, 0, 1)
+            local val = math.floor(min + (max - min) * perc)
+            SliderFill.Size = UDim2.new(perc, 0, 1, 0)
+            T.Text = text .. ": " .. val
+            callback(val)
+        end
 
-	return Library
+        SliderBack.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true Update() end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+        UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update() end end)
+    end
+
+    function Library:CreateTab(name, isSettings)
+        local NewTab = setmetatable({}, TabBase)
+        local TabBtn = Instance.new("TextButton", SidebarScroll)
+        TabBtn.Size = UDim2.new(0.95, 0, 0, 38)
+        TabBtn.BackgroundColor3 = CurrentTheme.Secondary
+        TabBtn.Text = name
+        TabBtn.TextColor3 = CurrentTheme.Text
+        TabBtn.Font = Enum.Font.GothamMedium
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
+        table.insert(Library.TabButtons, TabBtn)
+
+        local Page = Instance.new("ScrollingFrame", PagesFolder)
+        Page.Size = UDim2.new(1, 0, 1, 0)
+        Page.BackgroundTransparency = 1
+        Page.Visible = false
+        Page.ScrollBarThickness = 0
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
+
+        NewTab.Page = Page
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
+            for _, b in pairs(Library.TabButtons) do
+                b:SetAttribute("Active", false)
+                TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
+            end
+            Page.Visible = true
+            TabBtn:SetAttribute("Active", true)
+            TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent, TextColor3 = CurrentTheme.BtnText}):Play()
+        end)
+
+        if not isSettings and #Library.TabButtons == 1 then
+            Page.Visible = true
+            TabBtn:SetAttribute("Active", true)
+            TabBtn.BackgroundColor3 = CurrentTheme.Accent
+            TabBtn.TextColor3 = CurrentTheme.BtnText
+        end
+        return NewTab
+    end
+
+    -- Авто-настройки
+    local Settings = Library:CreateTab("Settings", true)
+    for name, data in pairs(Themes) do
+        Settings:AddButtonRow("Gamma: "..name, "Apply", function() ApplyTheme(data) end)
+    end
+
+    return Library
 end
 
 return UI_Module
