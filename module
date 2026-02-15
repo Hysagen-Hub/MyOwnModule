@@ -285,11 +285,12 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
     end
+
     function TabBase:AddToggleButton(text, default, callback)
         self.Count = self.Count + 1
         local Toggled = default or false
         
-        -- Контейнер строки (Row)
+        -- Используем такой же Row как в AddButtonRow
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
         Row.Size = UDim2.new(1, -10, 0, 55)
@@ -297,7 +298,6 @@ function UI_Module.CreateMain(hubTitle)
         Row.LayoutOrder = self.Count
         Instance.new("UICorner", Row)
         
-        -- Название функции слева
         local L = Instance.new("TextLabel", Row)
         L.Size = UDim2.new(0.6, 0, 1, 0)
         L.Position = UDim2.new(0, 15, 0, 0)
@@ -307,27 +307,26 @@ function UI_Module.CreateMain(hubTitle)
         L.TextSize = 16
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
-    
-        -- Кнопка-статус справа
-        local B = Instance.new("TextButton", Row)
-        B.Name = "ToggleBtnFrame"
-        B.Size = UDim2.new(0.3, 0, 0, 38)
-        B.Position = UDim2.new(0.65, 0, 0.5, -19)
-        B.BackgroundColor3 = Color3.fromRGB(30, 35, 45) -- Темный фон кнопки как в примере
-        B.Text = "" -- Текст будет в отдельном лейбле внутри
-        B.AutoButtonColor = false
-        Instance.new("UICorner", B).CornerRadius = UDim.new(0, 8)
-    
-        -- Точка индикатора (Status Dot)
-        local Dot = Instance.new("Frame", B)
+
+        -- Сама кнопка-переключатель
+        local ToggleBtn = Instance.new("TextButton", Row)
+        ToggleBtn.Name = "ToggleBtnFrame"
+        ToggleBtn.Size = UDim2.new(0.3, 0, 0, 38)
+        ToggleBtn.Position = UDim2.new(0.65, 0, 0.5, -19)
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) 
+        ToggleBtn.Text = "" 
+        ToggleBtn.AutoButtonColor = false
+        Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+
+        local Dot = Instance.new("Frame", ToggleBtn)
+        Dot.Name = "StatusDot"
         Dot.Size = UDim2.new(0, 8, 0, 8)
         Dot.Position = UDim2.new(0, 10, 0.5, -4)
         Dot.BackgroundColor3 = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
         Dot.BorderSizePixel = 0
         Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
-    
-        -- Текст статуса (ON/OFF)
-        local StatusLabel = Instance.new("TextLabel", B)
+
+        local StatusLabel = Instance.new("TextLabel", ToggleBtn)
         StatusLabel.Size = UDim2.new(1, -25, 1, 0)
         StatusLabel.Position = UDim2.new(0, 22, 0, 0)
         StatusLabel.BackgroundTransparency = 1
@@ -336,39 +335,22 @@ function UI_Module.CreateMain(hubTitle)
         StatusLabel.Font = Enum.Font.GothamBold
         StatusLabel.TextSize = 14
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-        -- Логика переключения с градиентным Tween-переходом
-        B.MouseButton1Click:Connect(function()
+
+        ToggleBtn.MouseButton1Click:Connect(function()
             Toggled = not Toggled
-            
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
             local targetText = Toggled and "ON" or "OFF"
             
-            -- Плавный переход цвета точки
-            TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                BackgroundColor3 = targetColor
-            }):Play()
-            
-            -- Плавный переход цвета текста
-            TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
-                TextColor3 = targetColor
-            }):Play()
-            
+            TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
+            TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
             StatusLabel.Text = targetText
             callback(Toggled)
         end)
-        
-        -- Визуальный эффект при наведении (как в закрытии окна)
-        B.MouseEnter:Connect(function()
-            TweenService:Create(B, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 45, 55)}):Play()
-        end)
-        B.MouseLeave:Connect(function()
-            TweenService:Create(B, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 35, 45)}):Play()
-        end)
     end
+
     function Library:CreateTab(name, isSettings)
         local NewTab = setmetatable({}, TabBase)
-        NewTab.Count = 0 -- Счётчик элементов
+        NewTab.Count = 0 
         
         local TabBtn = Instance.new("TextButton", SidebarScroll)
         TabBtn.Name = "TabBtn"
