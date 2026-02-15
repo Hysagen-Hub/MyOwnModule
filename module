@@ -3,301 +3,236 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
 function UI_Module.CreateMain(hubTitle)
-	local Library = {
-		CurrentTheme = nil,
-		TabButtons = {},
-		PageElements = {}, -- Для массового обновления цветов элементов
-		SidebarParts = {},
-		MainParts = {}
-	}
+    local Library = {
+        CurrentTheme = nil,
+        AllElements = {
+            MainFrames = {},    -- Главный фон
+            SidebarFrames = {}, -- Фон сайдбара
+            Buttons = {},       -- Акцентные кнопки
+            Strokes = {},       -- Все обводки
+            Texts = {},         -- Заголовки и текст
+            Secondary = {}      -- Внутренние контейнеры
+        },
+        TabButtons = {}
+    }
 
-	-- Таблица пресетов (Гамма: Фон, Сайдбар, Обводка, Акцент)
-	local Themes = {
-		["Electric Blue"] = {
-			Main = Color3.fromRGB(15, 15, 18),
-			Sidebar = Color3.fromRGB(20, 20, 25),
-			Stroke = Color3.fromRGB(45, 55, 80),
-			Accent = Color3.fromRGB(60, 110, 255),
-			Text = Color3.fromRGB(255, 255, 255)
-		},
-		["Sunset Orange"] = {
-			Main = Color3.fromRGB(20, 15, 10),
-			Sidebar = Color3.fromRGB(30, 22, 15),
-			Stroke = Color3.fromRGB(80, 50, 30),
-			Accent = Color3.fromRGB(255, 140, 50),
-			Text = Color3.fromRGB(255, 240, 230)
-		},
-		["Ruby Red"] = {
-			Main = Color3.fromRGB(18, 10, 10),
-			Sidebar = Color3.fromRGB(25, 15, 15),
-			Stroke = Color3.fromRGB(80, 30, 30),
-			Accent = Color3.fromRGB(255, 60, 60),
-			Text = Color3.fromRGB(255, 230, 230)
-		},
-		["Emerald"] = {
-			Main = Color3.fromRGB(10, 18, 14),
-			Sidebar = Color3.fromRGB(15, 25, 20),
-			Stroke = Color3.fromRGB(30, 70, 45),
-			Accent = Color3.fromRGB(50, 220, 110),
-			Text = Color3.fromRGB(230, 255, 240)
-		},
-		["Midnight"] = {
-			Main = Color3.fromRGB(10, 10, 12),
-			Sidebar = Color3.fromRGB(15, 15, 18),
-			Stroke = Color3.fromRGB(35, 35, 40),
-			Accent = Color3.fromRGB(140, 80, 255),
-			Text = Color3.fromRGB(240, 240, 255)
-		}
-	}
-	
-	Library.CurrentTheme = Themes["Electric Blue"]
+    -- Цветовые палитры (Гаммы)
+    local Themes = {
+        ["Black (Default)"] = {
+            Main = Color3.fromRGB(10, 10, 10),
+            Sidebar = Color3.fromRGB(15, 15, 15),
+            Stroke = Color3.fromRGB(30, 30, 30),
+            Accent = Color3.fromRGB(255, 255, 255), -- Белый акцент для черной темы
+            Text = Color3.fromRGB(255, 255, 255),
+            Secondary = Color3.fromRGB(20, 20, 20)
+        },
+        ["Orange Dream"] = {
+            Main = Color3.fromRGB(25, 15, 10),
+            Sidebar = Color3.fromRGB(35, 20, 15),
+            Stroke = Color3.fromRGB(60, 40, 20),
+            Accent = Color3.fromRGB(255, 140, 50),
+            Text = Color3.fromRGB(255, 230, 200),
+            Secondary = Color3.fromRGB(45, 30, 20)
+        },
+        ["Deep Sea"] = {
+            Main = Color3.fromRGB(10, 15, 25),
+            Sidebar = Color3.fromRGB(15, 20, 35),
+            Stroke = Color3.fromRGB(30, 45, 80),
+            Accent = Color3.fromRGB(60, 160, 255),
+            Text = Color3.fromRGB(200, 230, 255),
+            Secondary = Color3.fromRGB(20, 25, 45)
+        },
+        ["Blood Moon"] = {
+            Main = Color3.fromRGB(20, 10, 10),
+            Sidebar = Color3.fromRGB(30, 15, 15),
+            Stroke = Color3.fromRGB(70, 25, 25),
+            Accent = Color3.fromRGB(255, 50, 50),
+            Text = Color3.fromRGB(255, 200, 200),
+            Secondary = Color3.fromRGB(40, 20, 20)
+        }
+    }
+    
+    -- Установка черной темы в начале
+    Library.CurrentTheme = Themes["Black (Default)"]
 
-	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "Universal_Theme_GUI"
-	ScreenGui.ResetOnSpawn = false
-	ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "TotalTheme_GUI"
+    ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-	local Main = Instance.new("Frame")
-	Main.Size = UDim2.new(0, 630, 0, 430)
-	Main.Position = UDim2.new(0.5, -315, 0.5, -215)
-	Main.BackgroundColor3 = Library.CurrentTheme.Main
-	Main.BorderSizePixel = 0
-	Main.Parent = ScreenGui
-	table.insert(Library.MainParts, Main)
+    -- Главное окно
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 630, 0, 430)
+    Main.Position = UDim2.new(0.5, -315, 0.5, -215)
+    Main.BackgroundColor3 = Library.CurrentTheme.Main
+    Main.BorderSizePixel = 0
+    Main.Parent = ScreenGui
+    table.insert(Library.AllElements.MainFrames, Main)
 
-	local MainCorner = Instance.new("UICorner", Main)
-	local MainStroke = Instance.new("UIStroke", Main)
-	MainStroke.Thickness = 2
-	MainStroke.Color = Library.CurrentTheme.Stroke
-	table.insert(Library.MainParts, MainStroke)
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+    local MainStroke = Instance.new("UIStroke", Main)
+    MainStroke.Thickness = 2
+    MainStroke.Color = Library.CurrentTheme.Stroke
+    table.insert(Library.AllElements.Strokes, MainStroke)
 
-	-- Сайдбар
-	local Sidebar = Instance.new("Frame")
-	Sidebar.Size = UDim2.new(0, 170, 1, 0)
-	Sidebar.BackgroundColor3 = Library.CurrentTheme.Sidebar
-	Sidebar.BorderSizePixel = 0
-	Sidebar.Parent = Main
-	table.insert(Library.SidebarParts, Sidebar)
-	Instance.new("UICorner", Sidebar)
+    -- Сайдбар
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Size = UDim2.new(0, 170, 1, 0)
+    Sidebar.BackgroundColor3 = Library.CurrentTheme.Sidebar
+    Sidebar.BorderSizePixel = 0
+    Sidebar.Parent = Main
+    table.insert(Library.AllElements.SidebarFrames, Sidebar)
+    Instance.new("UICorner", Sidebar)
 
-	local SidebarScroll = Instance.new("ScrollingFrame")
-	SidebarScroll.Size = UDim2.new(1, -10, 1, -70)
-	SidebarScroll.Position = UDim2.new(0, 5, 0, 60)
-	SidebarScroll.BackgroundTransparency = 1
-	SidebarScroll.ScrollBarThickness = 0
-	SidebarScroll.Parent = Sidebar
+    local SidebarScroll = Instance.new("ScrollingFrame")
+    SidebarScroll.Size = UDim2.new(1, -10, 1, -70)
+    SidebarScroll.Position = UDim2.new(0, 5, 0, 60)
+    SidebarScroll.BackgroundTransparency = 1
+    SidebarScroll.ScrollBarThickness = 0
+    SidebarScroll.Parent = Sidebar
 
-	local SideLayout = Instance.new("UIListLayout", SidebarScroll)
-	SideLayout.Padding = UDim.new(0, 5)
-	SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
-	local Title = Instance.new("TextLabel")
-	Title.Size = UDim2.new(1, 0, 0, 60)
-	Title.Text = hubTitle
-	Title.TextColor3 = Library.CurrentTheme.Text
-	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 18
-	Title.BackgroundTransparency = 1
-	Title.Parent = Sidebar
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, 60)
+    Title.Text = hubTitle
+    Title.TextColor3 = Library.CurrentTheme.Text
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 18
+    Title.BackgroundTransparency = 1
+    Title.Parent = Sidebar
+    table.insert(Library.AllElements.Texts, Title)
 
-	local PagesFolder = Instance.new("Frame")
-	PagesFolder.Size = UDim2.new(1, -190, 1, -20)
-	PagesFolder.Position = UDim2.new(0, 180, 0, 10)
-	PagesFolder.BackgroundTransparency = 1
-	PagesFolder.Parent = Main
+    local PagesFolder = Instance.new("Frame")
+    PagesFolder.Size = UDim2.new(1, -190, 1, -20)
+    PagesFolder.Position = UDim2.new(0, 180, 0, 10)
+    PagesFolder.BackgroundTransparency = 1
+    PagesFolder.Parent = Main
 
-	local ActivePage = nil
+    -- ФУНКЦИЯ ПОЛНОЙ ПЕРЕКРАСКИ
+    local function ApplyTheme(theme)
+        Library.CurrentTheme = theme
+        local tInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad)
 
-	-- Глобальное обновление темы
-	local function UpdateFullTheme(newTheme)
-		Library.CurrentTheme = newTheme
-		
-		-- Обновляем основу
-		TweenService:Create(Main, TweenInfo.new(0.5), {BackgroundColor3 = newTheme.Main}):Play()
-		TweenService:Create(MainStroke, TweenInfo.new(0.5), {Color = newTheme.Stroke}):Play()
-		TweenService:Create(Sidebar, TweenInfo.new(0.5), {BackgroundColor3 = newTheme.Sidebar}):Play()
-		TweenService:Create(Title, TweenInfo.new(0.5), {TextColor3 = newTheme.Text}):Play()
+        for _, f in pairs(Library.AllElements.MainFrames) do TweenService:Create(f, tInfo, {BackgroundColor3 = theme.Main}):Play() end
+        for _, s in pairs(Library.AllElements.SidebarFrames) do TweenService:Create(s, tInfo, {BackgroundColor3 = theme.Sidebar}):Play() end
+        for _, st in pairs(Library.AllElements.Strokes) do TweenService:Create(st, tInfo, {Color = theme.Stroke}):Play() end
+        for _, tx in pairs(Library.AllElements.Texts) do TweenService:Create(tx, tInfo, {TextColor3 = theme.Text}):Play() end
+        for _, sec in pairs(Library.AllElements.Secondary) do TweenService:Create(sec, tInfo, {BackgroundColor3 = theme.Secondary}):Play() end
+        
+        -- Кнопки вкладок (активная кнопка)
+        for _, btn in pairs(Library.TabButtons) do
+            if btn:GetAttribute("Active") then
+                TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Accent}):Play()
+            end
+        end
+    end
 
-		-- Обновляем кнопки вкладок
-		for _, btn in pairs(Library.TabButtons) do
-			if btn:GetAttribute("Active") then
-				TweenService:Create(btn, TweenInfo.new(0.3), {BackgroundColor3 = newTheme.Accent}):Play()
-			end
-			local stroke = btn:FindFirstChildOfClass("UIStroke")
-			if stroke then stroke.Color = newTheme.Stroke end
-		end
+    -- МЕТОД: CreateTab
+    function Library:CreateTab(name, isSettings)
+        local TabMethods = {}
+        
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Size = UDim2.new(0.9, 0, 0, 38)
+        TabBtn.BackgroundColor3 = Library.CurrentTheme.Secondary
+        TabBtn.Text = name
+        TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        TabBtn.Font = Enum.Font.GothamMedium
+        TabBtn.Parent = SidebarScroll
+        TabBtn.LayoutOrder = isSettings and 9999 or #Library.TabButtons
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
+        
+        table.insert(Library.TabButtons, TabBtn)
+        table.insert(Library.AllElements.Secondary, TabBtn)
 
-		-- Обновляем элементы на страницах
-		for _, element in pairs(Library.PageElements) do
-			if element:IsA("Frame") then
-				TweenService:Create(element, TweenInfo.new(0.5), {BackgroundColor3 = newTheme.Sidebar}):Play()
-				local s = element:FindFirstChildOfClass("UIStroke")
-				if s then s.Color = newTheme.Stroke end
-			elseif element:IsA("TextButton") and not element:GetAttribute("IsTab") then
-				-- Если это обычная кнопка внутри страницы, красим её в акцент
-				TweenService:Create(element, TweenInfo.new(0.5), {BackgroundColor3 = newTheme.Accent}):Play()
-			end
-		end
-	end
+        local Page = Instance.new("ScrollingFrame")
+        Page.Size = UDim2.new(1, 0, 1, 0)
+        Page.BackgroundTransparency = 1
+        Page.Visible = false
+        Page.ScrollBarThickness = 2
+        Page.Parent = PagesFolder
 
-	-- МЕТОД СОЗДАНИЯ ВКЛАДКИ
-	function Library:CreateTab(name, isSettings)
-		local TabMethods = {}
-		
-		local TabBtn = Instance.new("TextButton")
-		TabBtn.Size = UDim2.new(0.9, 0, 0, 38)
-		TabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-		TabBtn.Text = name
-		TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-		TabBtn.Font = Enum.Font.GothamMedium
-		TabBtn.Parent = SidebarScroll
-		TabBtn.LayoutOrder = isSettings and 9999 or #Library.TabButtons
-		TabBtn:SetAttribute("IsTab", true)
-		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
-		table.insert(Library.TabButtons, TabBtn)
+        local PageLayout = Instance.new("UIListLayout", Page)
+        PageLayout.Padding = UDim.new(0, 10)
+        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+        end)
 
-		local Page = Instance.new("ScrollingFrame")
-		Page.Size = UDim2.new(1, 0, 1, 0)
-		Page.BackgroundTransparency = 1
-		Page.Visible = false
-		Page.ScrollBarThickness = 2
-		Page.Parent = PagesFolder
+        local Header = Instance.new("TextLabel")
+        Header.Size = UDim2.new(1, 0, 0, 40)
+        Header.Text = name
+        Header.TextColor3 = Library.CurrentTheme.Text
+        Header.Font = Enum.Font.GothamBold
+        Header.TextSize = 24
+        Header.TextXAlignment = Enum.TextXAlignment.Left
+        Header.BackgroundTransparency = 1
+        Header.Parent = Page
+        table.insert(Library.AllElements.Texts, Header)
 
-		local PageLayout = Instance.new("UIListLayout", Page)
-		PageLayout.Padding = UDim.new(0, 10)
-		PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
-		end)
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
+            for _, b in pairs(Library.TabButtons) do
+                b:SetAttribute("Active", false)
+                TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = Library.CurrentTheme.Secondary}):Play()
+            end
+            Page.Visible = true
+            TabBtn:SetAttribute("Active", true)
+            TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Library.CurrentTheme.Accent}):Play()
+        end)
 
-		local Header = Instance.new("TextLabel")
-		Header.Size = UDim2.new(1, 0, 0, 40)
-		Header.Text = name
-		Header.TextColor3 = Library.CurrentTheme.Text
-		Header.Font = Enum.Font.GothamBold
-		Header.TextSize = 24
-		Header.TextXAlignment = Enum.TextXAlignment.Left
-		Header.BackgroundTransparency = 1
-		Header.Parent = Page
+        if not isSettings and #Library.TabButtons == 1 then
+            Page.Visible = true
+            TabBtn:SetAttribute("Active", true)
+            TabBtn.BackgroundColor3 = Library.CurrentTheme.Accent
+        end
 
-		TabBtn.MouseButton1Click:Connect(function()
-			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-			for _, b in pairs(Library.TabButtons) do
-				b:SetAttribute("Active", false)
-				TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(35, 35, 40)}):Play()
-			end
-			Page.Visible = true
-			TabBtn:SetAttribute("Active", true)
-			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Library.CurrentTheme.Accent}):Play()
-		end)
+        -- ЭЛЕМЕНТЫ ВНУТРИ
+        function TabMethods:AddButtonRow(text, btnText, callback)
+            local Row = Instance.new("Frame")
+            Row.Size = UDim2.new(1, -10, 0, 45)
+            Row.BackgroundColor3 = Library.CurrentTheme.Secondary
+            Row.Parent = Page
+            Instance.new("UICorner", Row)
+            local s = Instance.new("UIStroke", Row)
+            s.Color = Library.CurrentTheme.Stroke
+            table.insert(Library.AllElements.Secondary, Row)
+            table.insert(Library.AllElements.Strokes, s)
 
-		if not ActivePage and not isSettings then
-			ActivePage = Page
-			Page.Visible = true
-			TabBtn:SetAttribute("Active", true)
-			TabBtn.BackgroundColor3 = Library.CurrentTheme.Accent
-		end
+            local L = Instance.new("TextLabel")
+            L.Size = UDim2.new(0.6, 0, 1, 0)
+            L.Position = UDim2.new(0, 15, 0, 0)
+            L.Text = text
+            L.TextColor3 = Color3.fromRGB(220, 220, 220)
+            L.Font = Enum.Font.Gotham
+            L.BackgroundTransparency = 1
+            L.TextXAlignment = Enum.TextXAlignment.Left
+            L.Parent = Row
 
-		-- ЭЛЕМЕНТЫ
-		function TabMethods:AddButtonRow(text, btnText, callback)
-			local Row = Instance.new("Frame")
-			Row.Size = UDim2.new(1, -10, 0, 45)
-			Row.BackgroundColor3 = Library.CurrentTheme.Sidebar
-			Row.Parent = Page
-			Instance.new("UICorner", Row)
-			local s = Instance.new("UIStroke", Row)
-			s.Color = Library.CurrentTheme.Stroke
-			table.insert(Library.PageElements, Row)
+            local B = Instance.new("TextButton")
+            B.Size = UDim2.new(0.3, 0, 0, 30)
+            B.Position = UDim2.new(0.65, 0, 0.5, -15)
+            B.BackgroundColor3 = Library.CurrentTheme.Accent
+            B.Text = btnText
+            B.TextColor3 = Color3.new(0, 0, 0)
+            B.Font = Enum.Font.GothamBold
+            B.Parent = Row
+            Instance.new("UICorner", B)
+            
+            B.MouseButton1Click:Connect(callback)
+        end
 
-			local L = Instance.new("TextLabel")
-			L.Size = UDim2.new(0.6, 0, 1, 0)
-			L.Position = UDim2.new(0, 15, 0, 0)
-			L.Text = text
-			L.TextColor3 = Color3.fromRGB(220, 220, 220)
-			L.Font = Enum.Font.Gotham
-			L.BackgroundTransparency = 1
-			L.TextXAlignment = Enum.TextXAlignment.Left
-			L.Parent = Row
+        return TabMethods
+    end
 
-			local B = Instance.new("TextButton")
-			B.Size = UDim2.new(0.3, 0, 0, 30)
-			B.Position = UDim2.new(0.65, 0, 0.5, -15)
-			B.BackgroundColor3 = Library.CurrentTheme.Accent
-			B.Text = btnText
-			B.TextColor3 = Color3.new(1, 1, 1)
-			B.Font = Enum.Font.GothamBold
-			B.Parent = Row
-			Instance.new("UICorner", B)
-			table.insert(Library.PageElements, B)
-			
-			B.MouseButton1Click:Connect(callback)
-		end
+    -- ВКЛАДКА НАСТРОЕК
+    local Settings = Library:CreateTab("Settings", true)
+    
+    for themeName, themeData in pairs(Themes) do
+        Settings:AddButtonRow("Gama: "..themeName, "Apply", function()
+            ApplyTheme(themeData)
+        end)
+    end
 
-		function TabMethods:AddComplexRow(text, btnText, height, callback)
-			local Container = Instance.new("Frame")
-			Container.Size = UDim2.new(1, -10, 0, 50 + height)
-			Container.BackgroundColor3 = Library.CurrentTheme.Sidebar
-			Container.Parent = Page
-			Instance.new("UICorner", Container)
-			local s = Instance.new("UIStroke", Container)
-			s.Color = Library.CurrentTheme.Stroke
-			table.insert(Library.PageElements, Container)
-
-			local L = Instance.new("TextLabel")
-			L.Size = UDim2.new(0.6, 0, 0, 45)
-			L.Position = UDim2.new(0, 15, 0, 0)
-			L.Text = text
-			L.TextColor3 = Color3.fromRGB(220, 220, 220)
-			L.Font = Enum.Font.Gotham
-			L.TextXAlignment = Enum.TextXAlignment.Left
-			L.BackgroundTransparency = 1
-			L.Parent = Container
-
-			local B = Instance.new("TextButton")
-			B.Size = UDim2.new(0.3, 0, 0, 30)
-			B.Position = UDim2.new(0.65, 0, 0, 7)
-			B.BackgroundColor3 = Library.CurrentTheme.Accent
-			B.Text = btnText
-			B.Parent = Container
-			Instance.new("UICorner", B)
-			table.insert(Library.PageElements, B)
-
-			local S = Instance.new("ScrollingFrame")
-			S.Size = UDim2.new(1, -20, 0, height)
-			S.Position = UDim2.new(0, 10, 0, 45)
-			S.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-			S.Parent = Container
-			Instance.new("UICorner", S)
-			Instance.new("UIListLayout", S).Padding = UDim.new(0, 2)
-
-			B.MouseButton1Click:Connect(function() callback(S) end)
-		end
-
-		function TabMethods:AddLabel(text)
-			local L = Instance.new("TextLabel")
-			L.Size = UDim2.new(1, -10, 0, 25)
-			L.BackgroundTransparency = 1
-			L.Text = text
-			L.TextColor3 = Color3.fromRGB(180, 180, 180)
-			L.Font = Enum.Font.Gotham
-			L.TextXAlignment = Enum.TextXAlignment.Left
-			L.Parent = Page
-		end
-
-		return TabMethods
-	end
-
-	-- АВТОМАТИЧЕСКАЯ ВКЛАДКА НАСТРОЕК
-	local Settings = Library:CreateTab("Settings", true)
-	Settings:AddLabel("Выберите цветовую схему:")
-
-	for themeName, themeData in pairs(Themes) do
-		Settings:AddButtonRow("Тема: "..themeName, "Выбрать", function()
-			UpdateFullTheme(themeData)
-		end)
-	end
-
-	return Library
+    return Library
 end
 
 return UI_Module
