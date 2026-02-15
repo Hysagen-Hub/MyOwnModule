@@ -3,7 +3,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
--- Логика перетаскивания (Drag)
+-- Логика Drag (Перетаскивание)
 local function MakeDraggable(gui)
 	local dragging, dragInput, dragStart, startPos
 	gui.InputBegan:Connect(function(input)
@@ -37,10 +37,10 @@ function UI_Module.CreateMain(hubTitle)
 			Main = Color3.fromRGB(12, 12, 12),
 			Sidebar = Color3.fromRGB(18, 18, 18),
 			Stroke = Color3.fromRGB(35, 35, 35),
-			Accent = Color3.fromRGB(255, 255, 255), -- Белая кнопка на черном фоне
+			Accent = Color3.fromRGB(255, 255, 255),
 			Text = Color3.fromRGB(255, 255, 255),
 			Secondary = Color3.fromRGB(25, 25, 25),
-			BtnText = Color3.fromRGB(0, 0, 0) -- Текст на кнопке черный
+			BtnText = Color3.fromRGB(0, 0, 0)
 		},
 		["Orange Dream"] = {
 			Main = Color3.fromRGB(25, 18, 15),
@@ -50,21 +50,12 @@ function UI_Module.CreateMain(hubTitle)
 			Text = Color3.fromRGB(255, 230, 210),
 			Secondary = Color3.fromRGB(45, 35, 30),
 			BtnText = Color3.fromRGB(255, 255, 255)
-		},
-		["Ruby Red"] = {
-			Main = Color3.fromRGB(20, 10, 10),
-			Sidebar = Color3.fromRGB(28, 12, 12),
-			Stroke = Color3.fromRGB(60, 25, 25),
-			Accent = Color3.fromRGB(255, 60, 60),
-			Text = Color3.fromRGB(255, 210, 210),
-			Secondary = Color3.fromRGB(40, 20, 20),
-			BtnText = Color3.fromRGB(255, 255, 255)
 		}
 	}
 	
 	local CurrentTheme = Themes["Black (Default)"]
 	local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-	ScreenGui.Name = "Refined_Hub"
+	ScreenGui.Name = "Slider_Engine_V6"
 	ScreenGui.ResetOnSpawn = false
 
 	local Main = Instance.new("Frame", ScreenGui)
@@ -94,20 +85,12 @@ function UI_Module.CreateMain(hubTitle)
 	SidebarScroll.ScrollBarThickness = 0
 	Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
-	local Title = Instance.new("TextLabel", Sidebar)
-	Title.Size = UDim2.new(1, 0, 0, 60)
-	Title.Text = hubTitle
-	Title.TextColor3 = CurrentTheme.Text
-	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 16
-	Title.BackgroundTransparency = 1
-
 	local PagesFolder = Instance.new("Frame", Main)
 	PagesFolder.Size = UDim2.new(1, -195, 1, -20)
 	PagesFolder.Position = UDim2.new(0, 185, 0, 10)
 	PagesFolder.BackgroundTransparency = 1
 
-	-- Функция обновления темы (теперь красит и внутренние кнопки)
+	-- Функция смены темы
 	local function ApplyTheme(theme)
 		CurrentTheme = theme
 		local tInfo = TweenInfo.new(0.4)
@@ -115,21 +98,75 @@ function UI_Module.CreateMain(hubTitle)
 			if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
 			elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
 			elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
-			elseif obj.Name == "Row" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-			elseif obj.Name == "ActionBtn" then 
+			elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
+			elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" then 
 				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
-				TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
+				if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
 			elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
-			elseif obj:IsA("TextButton") and not obj:GetAttribute("Active") then
-				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-			elseif obj:IsA("TextButton") and obj:GetAttribute("Active") then
-				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
-				TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
 			end
 		end
 	end
 
-	-- Методы
+	-- МЕТОД: AddSlider
+	function TabBase:AddSlider(text, min, max, default, callback)
+		local Row = Instance.new("Frame", self.Page)
+		Row.Name = "Row"
+		Row.Size = UDim2.new(1, -10, 0, 65)
+		Row.BackgroundColor3 = CurrentTheme.Secondary
+		Instance.new("UICorner", Row)
+
+		local Title = Instance.new("TextLabel", Row)
+		Title.Size = UDim2.new(1, 0, 0, 30)
+		Title.Position = UDim2.new(0, 15, 0, 0)
+		Title.Text = text .. " : " .. default
+		Title.TextColor3 = CurrentTheme.Text
+		Title.BackgroundTransparency = 1
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		Title.Font = Enum.Font.Gotham
+
+		local SliderBack = Instance.new("Frame", Row)
+		SliderBack.Name = "SliderBack"
+		SliderBack.Size = UDim2.new(1, -30, 0, 6)
+		SliderBack.Position = UDim2.new(0, 15, 0, 45)
+		SliderBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		Instance.new("UICorner", SliderBack)
+
+		local SliderFill = Instance.new("Frame", SliderBack)
+		SliderFill.Name = "SliderFill"
+		SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+		SliderFill.BackgroundColor3 = CurrentTheme.Accent
+		Instance.new("UICorner", SliderFill)
+
+		local function UpdateSlider()
+			local mousePos = UserInputService:GetMouseLocation().X
+			local barPos = SliderBack.AbsolutePosition.X
+			local barSize = SliderBack.AbsoluteSize.X
+			local percent = math.clamp((mousePos - barPos) / barSize, 0, 1)
+			
+			local value = math.floor(min + (max - min) * percent)
+			SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+			Title.Text = text .. " : " .. value
+			callback(value)
+		end
+
+		local dragging = false
+		SliderBack.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				UpdateSlider()
+			end
+		end)
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+		end)
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+				UpdateSlider()
+			end
+		end)
+	end
+
+	-- (Остальные методы: CreateTab, AddLabel, AddButtonRow - такие же, как в V5)
 	function TabBase:AddLabel(text)
 		local L = Instance.new("TextLabel", self.Page)
 		L.Size = UDim2.new(1, -10, 0, 25)
@@ -146,9 +183,6 @@ function UI_Module.CreateMain(hubTitle)
 		Row.Size = UDim2.new(1, -10, 0, 48)
 		Row.BackgroundColor3 = CurrentTheme.Secondary
 		Instance.new("UICorner", Row)
-		local s = Instance.new("UIStroke", Row)
-		s.Color = CurrentTheme.Stroke
-
 		local L = Instance.new("TextLabel", Row)
 		L.Size = UDim2.new(0.6, 0, 1, 0)
 		L.Position = UDim2.new(0, 15, 0, 0)
@@ -156,23 +190,14 @@ function UI_Module.CreateMain(hubTitle)
 		L.TextColor3 = CurrentTheme.Text
 		L.BackgroundTransparency = 1
 		L.TextXAlignment = Enum.TextXAlignment.Left
-
 		local B = Instance.new("TextButton", Row)
-		B.Name = "ActionBtn" -- Метка для системы тем
+		B.Name = "ActionBtn"
 		B.Size = UDim2.new(0.3, 0, 0, 32)
 		B.Position = UDim2.new(0.65, 0, 0.5, -16)
 		B.BackgroundColor3 = CurrentTheme.Accent
 		B.Text = btnText
 		B.TextColor3 = CurrentTheme.BtnText
-		B.Font = Enum.Font.GothamBold
 		Instance.new("UICorner", B)
-		
-		-- Дополнительная обводка для контраста кнопки
-		local bs = Instance.new("UIStroke", B)
-		bs.Thickness = 1.5
-		bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		bs.Transparency = 0.5
-		
 		B.MouseButton1Click:Connect(callback)
 	end
 
@@ -184,43 +209,19 @@ function UI_Module.CreateMain(hubTitle)
 		TabBtn.Text = name
 		TabBtn.TextColor3 = CurrentTheme.Text
 		TabBtn.Font = Enum.Font.GothamMedium
-		TabBtn.LayoutOrder = isSettings and 9999 or #Library.TabButtons
 		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
 		table.insert(Library.TabButtons, TabBtn)
-
 		local Page = Instance.new("ScrollingFrame", PagesFolder)
 		Page.Size = UDim2.new(1, 0, 1, 0)
 		Page.BackgroundTransparency = 1
 		Page.Visible = false
-		Page.ScrollBarThickness = 0
 		Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
-
 		NewTab.Page = Page
-
 		TabBtn.MouseButton1Click:Connect(function()
 			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-			for _, b in pairs(Library.TabButtons) do
-				b:SetAttribute("Active", false)
-				TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
-			end
 			Page.Visible = true
-			TabBtn:SetAttribute("Active", true)
-			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent, TextColor3 = CurrentTheme.BtnText}):Play()
 		end)
-
-		if not isSettings and #Library.TabButtons == 1 then
-			Page.Visible = true
-			TabBtn:SetAttribute("Active", true)
-			TabBtn.BackgroundColor3 = CurrentTheme.Accent
-			TabBtn.TextColor3 = CurrentTheme.BtnText
-		end
 		return NewTab
-	end
-
-	local Settings = Library:CreateTab("Settings", true)
-	Settings:AddLabel("Visual Customization:")
-	for name, data in pairs(Themes) do
-		Settings:AddButtonRow("Gamma: "..name, "Apply", function() ApplyTheme(data) end)
 	end
 
 	return Library
