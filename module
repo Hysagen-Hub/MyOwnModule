@@ -28,7 +28,6 @@ local function MakeDraggable(gui)
 end
 
 function UI_Module.CreateMain(hubTitle)
-	-- Мета-таблицы для защиты методов
 	local Library = { TabButtons = {} }
 	local TabBase = {}
 	TabBase.__index = TabBase
@@ -38,9 +37,10 @@ function UI_Module.CreateMain(hubTitle)
 			Main = Color3.fromRGB(12, 12, 12),
 			Sidebar = Color3.fromRGB(18, 18, 18),
 			Stroke = Color3.fromRGB(35, 35, 35),
-			Accent = Color3.fromRGB(255, 255, 255),
+			Accent = Color3.fromRGB(255, 255, 255), -- Белая кнопка на черном фоне
 			Text = Color3.fromRGB(255, 255, 255),
-			Secondary = Color3.fromRGB(25, 25, 25)
+			Secondary = Color3.fromRGB(25, 25, 25),
+			BtnText = Color3.fromRGB(0, 0, 0) -- Текст на кнопке черный
 		},
 		["Orange Dream"] = {
 			Main = Color3.fromRGB(25, 18, 15),
@@ -48,21 +48,23 @@ function UI_Module.CreateMain(hubTitle)
 			Stroke = Color3.fromRGB(75, 45, 30),
 			Accent = Color3.fromRGB(255, 140, 50),
 			Text = Color3.fromRGB(255, 230, 210),
-			Secondary = Color3.fromRGB(45, 35, 30)
+			Secondary = Color3.fromRGB(45, 35, 30),
+			BtnText = Color3.fromRGB(255, 255, 255)
 		},
-		["Deep Blue"] = {
-			Main = Color3.fromRGB(10, 15, 25),
-			Sidebar = Color3.fromRGB(15, 20, 35),
-			Stroke = Color3.fromRGB(35, 50, 90),
-			Accent = Color3.fromRGB(60, 160, 255),
-			Text = Color3.fromRGB(210, 235, 255),
-			Secondary = Color3.fromRGB(25, 30, 50)
+		["Ruby Red"] = {
+			Main = Color3.fromRGB(20, 10, 10),
+			Sidebar = Color3.fromRGB(28, 12, 12),
+			Stroke = Color3.fromRGB(60, 25, 25),
+			Accent = Color3.fromRGB(255, 60, 60),
+			Text = Color3.fromRGB(255, 210, 210),
+			Secondary = Color3.fromRGB(40, 20, 20),
+			BtnText = Color3.fromRGB(255, 255, 255)
 		}
 	}
 	
 	local CurrentTheme = Themes["Black (Default)"]
 	local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-	ScreenGui.Name = "Final_Engine_GUI"
+	ScreenGui.Name = "Refined_Hub"
 	ScreenGui.ResetOnSpawn = false
 
 	local Main = Instance.new("Frame", ScreenGui)
@@ -76,7 +78,7 @@ function UI_Module.CreateMain(hubTitle)
 	MainStroke.Thickness = 2
 	MainStroke.Color = CurrentTheme.Stroke
 	
-	MakeDraggable(Main) -- Теперь окно можно двигать
+	MakeDraggable(Main)
 
 	local Sidebar = Instance.new("Frame", Main)
 	Sidebar.Name = "Sidebar"
@@ -105,24 +107,29 @@ function UI_Module.CreateMain(hubTitle)
 	PagesFolder.Position = UDim2.new(0, 185, 0, 10)
 	PagesFolder.BackgroundTransparency = 1
 
-	-- Функция глобальной смены гаммы
+	-- Функция обновления темы (теперь красит и внутренние кнопки)
 	local function ApplyTheme(theme)
 		CurrentTheme = theme
-		local tInfo = TweenInfo.new(0.5)
+		local tInfo = TweenInfo.new(0.4)
 		for _, obj in pairs(ScreenGui:GetDescendants()) do
 			if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
 			elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
 			elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
+			elseif obj.Name == "Row" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
+			elseif obj.Name == "ActionBtn" then 
+				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
+				TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
 			elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
-			elseif obj.Name == "Row" or (obj:IsA("TextButton") and not obj:GetAttribute("Active")) then
+			elseif obj:IsA("TextButton") and not obj:GetAttribute("Active") then
 				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
 			elseif obj:IsA("TextButton") and obj:GetAttribute("Active") then
 				TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
+				TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
 			end
 		end
 	end
 
-	-- МЕТОДЫ ВКЛАДОК
+	-- Методы
 	function TabBase:AddLabel(text)
 		local L = Instance.new("TextLabel", self.Page)
 		L.Size = UDim2.new(1, -10, 0, 25)
@@ -131,7 +138,6 @@ function UI_Module.CreateMain(hubTitle)
 		L.TextColor3 = CurrentTheme.Text
 		L.Font = Enum.Font.Gotham
 		L.TextXAlignment = Enum.TextXAlignment.Left
-		return L
 	end
 
 	function TabBase:AddButtonRow(text, btnText, callback)
@@ -152,21 +158,26 @@ function UI_Module.CreateMain(hubTitle)
 		L.TextXAlignment = Enum.TextXAlignment.Left
 
 		local B = Instance.new("TextButton", Row)
+		B.Name = "ActionBtn" -- Метка для системы тем
 		B.Size = UDim2.new(0.3, 0, 0, 32)
 		B.Position = UDim2.new(0.65, 0, 0.5, -16)
 		B.BackgroundColor3 = CurrentTheme.Accent
 		B.Text = btnText
-		B.TextColor3 = Color3.new(0,0,0)
+		B.TextColor3 = CurrentTheme.BtnText
 		B.Font = Enum.Font.GothamBold
 		Instance.new("UICorner", B)
+		
+		-- Дополнительная обводка для контраста кнопки
+		local bs = Instance.new("UIStroke", B)
+		bs.Thickness = 1.5
+		bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		bs.Transparency = 0.5
+		
 		B.MouseButton1Click:Connect(callback)
-		return B
 	end
 
-	-- ГЛАВНЫЙ МЕТОД СОЗДАНИЯ ВКЛАДКИ
 	function Library:CreateTab(name, isSettings)
 		local NewTab = setmetatable({}, TabBase)
-		
 		local TabBtn = Instance.new("TextButton", SidebarScroll)
 		TabBtn.Size = UDim2.new(0.95, 0, 0, 38)
 		TabBtn.BackgroundColor3 = CurrentTheme.Secondary
@@ -178,41 +189,38 @@ function UI_Module.CreateMain(hubTitle)
 		table.insert(Library.TabButtons, TabBtn)
 
 		local Page = Instance.new("ScrollingFrame", PagesFolder)
-		Page.Name = name.."_Page"
 		Page.Size = UDim2.new(1, 0, 1, 0)
 		Page.BackgroundTransparency = 1
 		Page.Visible = false
-		Page.ScrollBarThickness = 2
+		Page.ScrollBarThickness = 0
 		Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
 
 		NewTab.Page = Page
-		NewTab.Button = TabBtn
 
 		TabBtn.MouseButton1Click:Connect(function()
 			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
 			for _, b in pairs(Library.TabButtons) do
 				b:SetAttribute("Active", false)
-				TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary}):Play()
+				TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
 			end
 			Page.Visible = true
 			TabBtn:SetAttribute("Active", true)
-			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent}):Play()
+			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent, TextColor3 = CurrentTheme.BtnText}):Play()
 		end)
 
 		if not isSettings and #Library.TabButtons == 1 then
 			Page.Visible = true
 			TabBtn:SetAttribute("Active", true)
 			TabBtn.BackgroundColor3 = CurrentTheme.Accent
+			TabBtn.TextColor3 = CurrentTheme.BtnText
 		end
-
 		return NewTab
 	end
 
-	-- Вшиваем настройки
 	local Settings = Library:CreateTab("Settings", true)
-	Settings:AddLabel("Select Visual Theme:")
+	Settings:AddLabel("Visual Customization:")
 	for name, data in pairs(Themes) do
-		Settings:AddButtonRow("Gama: "..name, "Set", function() ApplyTheme(data) end)
+		Settings:AddButtonRow("Gamma: "..name, "Apply", function() ApplyTheme(data) end)
 	end
 
 	return Library
