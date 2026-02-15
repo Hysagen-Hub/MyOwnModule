@@ -3,33 +3,49 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
+-- Глобальный флаг, чтобы GUI не улетало при использовании слайдера
+_G.IsDraggingSlider = false
+
 local function MakeDraggable(gui)
-    local dragging, dragInput, dragStart, startPos
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+    
+    -- Функция обновления позиции
+    local function updatePosition(input)
+        if not dragging or not dragStart or not startPos then return end
+        local delta = input.Position - dragStart
+        gui.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
     
     gui.InputBegan:Connect(function(input)
-        -- Проверяем, что нажата ЛКМ именно на основной фрейм, а не на его содержимое (кнопки/слайдеры)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local obj = gui.Parent:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)[1]
-            if obj == gui or obj.Name == "Sidebar" or obj.Name == "Title" then
-                dragging = true
-                dragStart = input.Position
-                startPos = gui.Position
-            end
+        -- Тянем окно только если НЕ зажат слайдер
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
         end
     end)
-
+    
     gui.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
     end)
-
+    
+    -- Отслеживаем движение мыши для перетаскивания
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
-    end)
-
-    game:GetService("RunService").RenderStepped:Connect(function()
-        if dragging and dragInput then
-            local delta = dragInput.Position - dragStart
-            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+            if dragging and not _G.IsDraggingSlider then
+                updatePosition(input)
+            end
         end
     end)
 end
@@ -62,7 +78,7 @@ function UI_Module.CreateMain(hubTitle)
     
     local CurrentTheme = Themes["Black (Default)"]
     local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-    ScreenGui.Name = "Nexus_Pure_V9"
+    ScreenGui.Name = "Nexus_Final_Fixed"
     ScreenGui.ResetOnSpawn = false
 
     local Main = Instance.new("Frame", ScreenGui)
@@ -93,7 +109,6 @@ function UI_Module.CreateMain(hubTitle)
     Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
     local Title = Instance.new("TextLabel", Sidebar)
-    Title.Name = "Title"
     Title.Size = UDim2.new(1, 0, 0, 60)
     Title.Text = hubTitle
     Title.TextColor3 = CurrentTheme.Text
@@ -156,19 +171,13 @@ function UI_Module.CreateMain(hubTitle)
         B.TextColor3 = CurrentTheme.BtnText
         B.Font = Enum.Font.GothamBold
         Instance.new("UICorner", B)
-        
-        local bs = Instance.new("UIStroke", B)
-        bs.Thickness = 1.5
-        bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        bs.Transparency = 0.5
-
         B.MouseButton1Click:Connect(callback)
     end
 
     function TabBase:AddSlider(text, min, max, default, callback)
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
-        Row.Size = UDim2.new(1, -10, 0, 65)
+        Row.Size = UDim2.new(1, -10, 0, 75)
         Row.BackgroundColor3 = CurrentTheme.Secondary
         Instance.new("UICorner", Row)
 
@@ -184,7 +193,7 @@ function UI_Module.CreateMain(hubTitle)
         local SliderBack = Instance.new("Frame", Row)
         SliderBack.Name = "SliderBack"
         SliderBack.Size = UDim2.new(1, -30, 0, 6)
-        SliderBack.Position = UDim2.new(0, 15, 0, 45)
+        SliderBack.Position = UDim2.new(0, 15, 0, 50)
         SliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         Instance.new("UICorner", SliderBack)
 
@@ -199,38 +208,50 @@ function UI_Module.CreateMain(hubTitle)
         SliderKnob.Size = UDim2.new(0, 16, 0, 16)
         SliderKnob.Position = UDim2.new(1, -8, 0.5, -8)
         SliderKnob.BackgroundColor3 = CurrentTheme.Accent
-        SliderKnob.ZIndex = 5
         Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
         local KnobStroke = Instance.new("UIStroke", SliderKnob)
         KnobStroke.Color = Color3.new(0,0,0)
-        KnobStroke.Transparency = 0.5
+        KnobStroke.Transparency = 0.6
 
-        local dragging = false
-        local function Update()
-            local mouseX = UserInputService:GetMouseLocation().X
+        local currentVal = default
+        
+        local function UpdateFromMouse(mouseX)
             local barX = SliderBack.AbsolutePosition.X
             local barW = SliderBack.AbsoluteSize.X
             local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            local val = math.floor(min + (max - min) * perc)
-            SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. val
-            callback(val)
+            currentVal = math.floor(min + (max - min) * perc)
+            SliderFill.Size = UDim2.new((currentVal - min) / (max - min), 0, 1, 0)
+            T.Text = text .. ": " .. currentVal
+            callback(currentVal)
         end
 
+        local dragging = false
+        
         SliderBack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
-                Update()
+                _G.IsDraggingSlider = true -- Запрещаем окну двигаться
+                UpdateFromMouse(input.Position.X)
             end
         end)
-
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+        
+        SliderKnob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                _G.IsDraggingSlider = true -- Запрещаем окну двигаться
+            end
         end)
-
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+                _G.IsDraggingSlider = false -- Разрешаем окну двигаться
+            end
+        end)
+        
         UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                Update()
+                UpdateFromMouse(input.Position.X)
             end
         end)
     end
