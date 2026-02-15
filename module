@@ -52,7 +52,7 @@ function UI_Module.CreateMain(hubTitle)
     TabBase.__index = TabBase
     
     local Themes = {
-        ["Midnight"] = { -- Оригинальный Black
+        ["Midnight"] = {
             Main = Color3.fromRGB(12, 12, 12), Sidebar = Color3.fromRGB(18, 18, 18), Stroke = Color3.fromRGB(35, 35, 35),
             Accent = Color3.fromRGB(255, 255, 255), Text = Color3.fromRGB(255, 255, 255), Secondary = Color3.fromRGB(25, 25, 25), BtnText = Color3.fromRGB(0, 0, 0)
         },
@@ -127,14 +127,16 @@ function UI_Module.CreateMain(hubTitle)
     Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
     local Title = Instance.new("TextLabel", Sidebar)
+    Title.Name = "HubTitle"
     Title.Size = UDim2.new(1, 0, 0, 60)
     Title.Text = hubTitle
     Title.TextColor3 = CurrentTheme.Text
     Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18 -- Чуть крупнее заголовок
+    Title.TextSize = 18
     Title.BackgroundTransparency = 1
 
     local PagesFolder = Instance.new("Frame", Main)
+    PagesFolder.Name = "Pages"
     PagesFolder.Size = UDim2.new(1, -195, 1, -20)
     PagesFolder.Position = UDim2.new(0, 185, 0, 10)
     PagesFolder.BackgroundTransparency = 1
@@ -142,6 +144,8 @@ function UI_Module.CreateMain(hubTitle)
     local function ApplyTheme(theme)
         CurrentTheme = theme
         local tInfo = TweenInfo.new(0.4)
+        
+        -- Обновление всех объектов в интерфейсе
         for _, obj in pairs(ScreenGui:GetDescendants()) do
             if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
             elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
@@ -151,6 +155,15 @@ function UI_Module.CreateMain(hubTitle)
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
                 if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
             elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
+            end
+        end
+
+        -- Специальное обновление кнопок табов в реальном времени
+        for _, btn in pairs(Library.TabButtons) do
+            if btn:GetAttribute("Active") == true then
+                TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Accent, TextColor3 = theme.BtnText}):Play()
+            else
+                TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Secondary, TextColor3 = theme.Text}):Play()
             end
         end
     end
@@ -169,7 +182,7 @@ function UI_Module.CreateMain(hubTitle)
     function TabBase:AddButtonRow(text, btnText, callback)
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
-        Row.Size = UDim2.new(1, -10, 0, 55) -- Увеличил высоту ряда
+        Row.Size = UDim2.new(1, -10, 0, 55)
         Row.BackgroundColor3 = CurrentTheme.Secondary
         Instance.new("UICorner", Row)
         
@@ -179,19 +192,19 @@ function UI_Module.CreateMain(hubTitle)
         L.Text = text
         L.TextColor3 = CurrentTheme.Text
         L.Font = Enum.Font.GothamMedium
-        L.TextSize = 16 -- Крупнее текст в ряду
+        L.TextSize = 16
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
         local B = Instance.new("TextButton", Row)
         B.Name = "ActionBtn"
-        B.Size = UDim2.new(0.3, 0, 0, 38) -- Крупнее кнопка
+        B.Size = UDim2.new(0.3, 0, 0, 38)
         B.Position = UDim2.new(0.65, 0, 0.5, -19)
         B.BackgroundColor3 = CurrentTheme.Accent
         B.Text = btnText
         B.TextColor3 = CurrentTheme.BtnText
         B.Font = Enum.Font.GothamBold
-        B.TextSize = 16 -- Крупнее текст на кнопке
+        B.TextSize = 16
         Instance.new("UICorner", B)
         B.MouseButton1Click:Connect(callback)
     end
@@ -228,7 +241,7 @@ function UI_Module.CreateMain(hubTitle)
 
         local SliderKnob = Instance.new("Frame", SliderFill)
         SliderKnob.Name = "SliderKnob"
-        SliderKnob.Size = UDim2.new(0, 20, 0, 20) -- Увеличил кругляшок
+        SliderKnob.Size = UDim2.new(0, 20, 0, 20)
         SliderKnob.Position = UDim2.new(1, -10, 0.5, -10)
         SliderKnob.BackgroundColor3 = CurrentTheme.Accent
         Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
@@ -282,12 +295,13 @@ function UI_Module.CreateMain(hubTitle)
     function Library:CreateTab(name, isSettings)
         local NewTab = setmetatable({}, TabBase)
         local TabBtn = Instance.new("TextButton", SidebarScroll)
-        TabBtn.Size = UDim2.new(0.95, 0, 0, 42) -- Увеличил кнопку таба
+        TabBtn.Name = "TabBtn"
+        TabBtn.Size = UDim2.new(0.95, 0, 0, 42)
         TabBtn.BackgroundColor3 = CurrentTheme.Secondary
         TabBtn.Text = name
         TabBtn.TextColor3 = CurrentTheme.Text
         TabBtn.Font = Enum.Font.GothamBold
-        TabBtn.TextSize = 16 -- Крупнее текст на боковых кнопках
+        TabBtn.TextSize = 16
         Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
         table.insert(Library.TabButtons, TabBtn)
 
@@ -321,7 +335,6 @@ function UI_Module.CreateMain(hubTitle)
     end
 
     local Settings = Library:CreateTab("Settings", true)
-    -- Теперь настройки тем разбиты на красивые блоки
     for name, data in pairs(Themes) do
         Settings:AddButtonRow(name, "Set", function() ApplyTheme(data) end)
     end
