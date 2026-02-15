@@ -2,8 +2,38 @@ local UI_Module = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 
 _G.IsDraggingSlider = false
+
+-- Файл для сохранения темы
+local THEME_FILE = "hysagen_ui_theme.txt"
+
+-- Функция загрузки сохраненной темы
+local function loadSavedTheme()
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(readfile(THEME_FILE))
+    end)
+    
+    if success and result and result.theme then
+        return result.theme
+    end
+    return nil
+end
+
+-- Функция сохранения темы
+local function saveTheme(themeName)
+    local settings = {
+        theme = themeName,
+        savedAt = DateTime.now():ToIsoDate()
+    }
+    
+    local success = pcall(function()
+        writefile(THEME_FILE, HttpService:JSONEncode(settings))
+    end)
+    
+    return success
+end
 
 local function MakeDraggable(gui)
     local dragging = false
@@ -95,6 +125,13 @@ function UI_Module.CreateMain(hubTitle)
     }
     
     local CurrentTheme = Themes["Midnight"]
+    
+    -- Загружаем сохраненную тему
+    local savedThemeName = loadSavedTheme()
+    if savedThemeName and Themes[savedThemeName] then
+        CurrentTheme = Themes[savedThemeName]
+    end
+    
     local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
     ScreenGui.Name = "Nexus_X_V10"
     ScreenGui.ResetOnSpawn = false
@@ -141,7 +178,7 @@ function UI_Module.CreateMain(hubTitle)
     PagesFolder.Position = UDim2.new(0, 185, 0, 10)
     PagesFolder.BackgroundTransparency = 1
 
-    local function ApplyTheme(theme)
+    local function ApplyTheme(theme, themeName)
         CurrentTheme = theme
         local tInfo = TweenInfo.new(0.4)
         
@@ -163,6 +200,11 @@ function UI_Module.CreateMain(hubTitle)
             else
                 TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Secondary, TextColor3 = theme.Text}):Play()
             end
+        end
+        
+        -- Сохраняем выбранную тему
+        if themeName then
+            saveTheme(themeName)
         end
     end
 
@@ -290,7 +332,6 @@ function UI_Module.CreateMain(hubTitle)
         self.Count = self.Count + 1
         local Toggled = default or false
         
-        -- Используем такой же Row как в AddButtonRow
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
         Row.Size = UDim2.new(1, -10, 0, 55)
@@ -308,7 +349,6 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
-        -- Сама кнопка-переключатель
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtnFrame"
         ToggleBtn.Size = UDim2.new(0.3, 0, 0, 38)
@@ -398,7 +438,9 @@ function UI_Module.CreateMain(hubTitle)
 
     local Settings = Library:CreateTab("Settings", true)
     for name, data in pairs(Themes) do
-        Settings:AddButtonRow(name, "Set", function() ApplyTheme(data) end)
+        Settings:AddButtonRow(name, "Set", function() 
+            ApplyTheme(data, name) 
+        end)
     end
 
     return Library
