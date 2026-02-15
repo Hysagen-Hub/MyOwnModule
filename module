@@ -3,8 +3,8 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
--- Функция для перетаскивания (Drag)
-local function MakeDraggable(frame)
+-- Функция для перемещения окна (Drag)
+local function EnableDrag(frame)
 	local dragging, dragInput, dragStart, startPos
 	frame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -14,14 +14,10 @@ local function MakeDraggable(frame)
 		end
 	end)
 	frame.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 	end)
 	UserInputService.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
-			dragInput = input
-		end
+		if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
 	end)
 	game:GetService("RunService").RenderStepped:Connect(function()
 		if dragging and dragInput then
@@ -34,12 +30,11 @@ end
 function UI_Module.CreateMain(hubTitle)
 	local Library = { TabButtons = {} }
 	
-	-- Цветовые гаммы
 	local Themes = {
 		["Black (Default)"] = {
 			Main = Color3.fromRGB(10, 10, 10),
 			Sidebar = Color3.fromRGB(15, 15, 15),
-			Stroke = Color3.fromRGB(35, 35, 35),
+			Stroke = Color3.fromRGB(40, 40, 40),
 			Accent = Color3.fromRGB(255, 255, 255),
 			Text = Color3.fromRGB(255, 255, 255),
 			Secondary = Color3.fromRGB(25, 25, 25)
@@ -47,24 +42,24 @@ function UI_Module.CreateMain(hubTitle)
 		["Orange Dream"] = {
 			Main = Color3.fromRGB(25, 18, 15),
 			Sidebar = Color3.fromRGB(35, 25, 20),
-			Stroke = Color3.fromRGB(70, 45, 30),
+			Stroke = Color3.fromRGB(75, 45, 30),
 			Accent = Color3.fromRGB(255, 140, 50),
 			Text = Color3.fromRGB(255, 230, 210),
 			Secondary = Color3.fromRGB(45, 35, 30)
 		},
 		["Deep Blue"] = {
-			Main = Color3.fromRGB(10, 12, 20),
-			Sidebar = Color3.fromRGB(15, 18, 28),
-			Stroke = Color3.fromRGB(30, 40, 70),
-			Accent = Color3.fromRGB(60, 150, 255),
-			Text = Color3.fromRGB(220, 240, 255),
-			Secondary = Color3.fromRGB(20, 25, 40)
+			Main = Color3.fromRGB(10, 15, 25),
+			Sidebar = Color3.fromRGB(15, 20, 35),
+			Stroke = Color3.fromRGB(35, 50, 90),
+			Accent = Color3.fromRGB(60, 160, 255),
+			Text = Color3.fromRGB(210, 235, 255),
+			Secondary = Color3.fromRGB(25, 30, 50)
 		}
 	}
 	
 	local CurrentTheme = Themes["Black (Default)"]
 	local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-	ScreenGui.Name = "Gemini_Final_UI"
+	ScreenGui.Name = "Gemini_V4"
 	ScreenGui.ResetOnSpawn = false
 
 	local Main = Instance.new("Frame", ScreenGui)
@@ -78,18 +73,18 @@ function UI_Module.CreateMain(hubTitle)
 	MainStroke.Thickness = 2
 	MainStroke.Color = CurrentTheme.Stroke
 	
-	MakeDraggable(Main) -- Включаем перетаскивание
+	EnableDrag(Main) -- Включаем перетаскивание за всё окно
 
 	local Sidebar = Instance.new("Frame", Main)
 	Sidebar.Name = "Sidebar"
-	Sidebar.Size = UDim2.new(0, 170, 1, 0)
+	Sidebar.Size = UDim2.new(0, 175, 1, 0)
 	Sidebar.BackgroundColor3 = CurrentTheme.Sidebar
 	Sidebar.BorderSizePixel = 0
 	Instance.new("UICorner", Sidebar)
 
 	local SidebarScroll = Instance.new("ScrollingFrame", Sidebar)
 	SidebarScroll.Size = UDim2.new(1, -10, 1, -70)
-	SidebarScroll.Position = UDim2.new(0, 5, 0, 60)
+	SidebarScroll.Position = UDim2.new(0, 5, 0, 65)
 	SidebarScroll.BackgroundTransparency = 1
 	SidebarScroll.ScrollBarThickness = 0
 	Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
@@ -103,11 +98,11 @@ function UI_Module.CreateMain(hubTitle)
 	Title.BackgroundTransparency = 1
 
 	local PagesFolder = Instance.new("Frame", Main)
-	PagesFolder.Size = UDim2.new(1, -190, 1, -20)
-	PagesFolder.Position = UDim2.new(0, 180, 0, 10)
+	PagesFolder.Size = UDim2.new(1, -195, 1, -20)
+	PagesFolder.Position = UDim2.new(0, 185, 0, 10)
 	PagesFolder.BackgroundTransparency = 1
 
-	-- Функция перекраски всего GUI
+	-- Функция смены темы
 	local function ApplyTheme(theme)
 		CurrentTheme = theme
 		local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quart)
@@ -125,16 +120,16 @@ function UI_Module.CreateMain(hubTitle)
 	end
 
 	-- Метод Создания Вкладки
-	Library.CreateTab = function(self, name, isSettings)
+	function Library:CreateTab(name, isSettings)
 		local TabMethods = {}
 		
 		local TabBtn = Instance.new("TextButton", SidebarScroll)
-		TabBtn.Size = UDim2.new(0.9, 0, 0, 38)
+		TabBtn.Size = UDim2.new(0.95, 0, 0, 38)
 		TabBtn.BackgroundColor3 = CurrentTheme.Secondary
 		TabBtn.Text = name
 		TabBtn.TextColor3 = CurrentTheme.Text
 		TabBtn.Font = Enum.Font.GothamMedium
-		TabBtn.LayoutOrder = isSettings and 9999 or #SidebarScroll:GetChildren()
+		TabBtn.LayoutOrder = isSettings and 9999 or #Library.TabButtons
 		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
 		table.insert(Library.TabButtons, TabBtn)
 
@@ -156,8 +151,8 @@ function UI_Module.CreateMain(hubTitle)
 			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent}):Play()
 		end)
 
-		-- Метод Добавления Текста (Label)
-		TabMethods.AddLabel = function(self, text)
+		-- Метод Добавления Текста
+		function TabMethods:AddLabel(text)
 			local L = Instance.new("TextLabel", Page)
 			L.Size = UDim2.new(1, -10, 0, 25)
 			L.BackgroundTransparency = 1
@@ -165,14 +160,13 @@ function UI_Module.CreateMain(hubTitle)
 			L.TextColor3 = CurrentTheme.Text
 			L.Font = Enum.Font.Gotham
 			L.TextXAlignment = Enum.TextXAlignment.Left
-			return L
 		end
 
 		-- Метод Добавления Кнопки
-		TabMethods.AddButtonRow = function(self, text, btnText, callback)
+		function TabMethods:AddButtonRow(text, btnText, callback)
 			local Row = Instance.new("Frame", Page)
 			Row.Name = "Row"
-			Row.Size = UDim2.new(1, -10, 0, 45)
+			Row.Size = UDim2.new(1, -10, 0, 48)
 			Row.BackgroundColor3 = CurrentTheme.Secondary
 			Instance.new("UICorner", Row)
 			local s = Instance.new("UIStroke", Row)
@@ -187,16 +181,16 @@ function UI_Module.CreateMain(hubTitle)
 			L.TextXAlignment = Enum.TextXAlignment.Left
 
 			local B = Instance.new("TextButton", Row)
-			B.Size = UDim2.new(0.3, 0, 0, 30)
-			B.Position = UDim2.new(0.65, 0, 0.5, -15)
+			B.Size = UDim2.new(0.3, 0, 0, 32)
+			B.Position = UDim2.new(0.65, 0, 0.5, -16)
 			B.BackgroundColor3 = CurrentTheme.Accent
 			B.Text = btnText
 			B.TextColor3 = Color3.new(0,0,0)
+			B.Font = Enum.Font.GothamBold
 			Instance.new("UICorner", B)
 			B.MouseButton1Click:Connect(callback)
 		end
 
-		-- Авто-открытие первой вкладки
 		if not isSettings and #Library.TabButtons == 1 then
 			Page.Visible = true
 			TabBtn:SetAttribute("Active", true)
@@ -206,12 +200,12 @@ function UI_Module.CreateMain(hubTitle)
 		return TabMethods
 	end
 
-	-- Вшитые настройки
-	local Settings = Library:CreateTab(Library, "Settings", true)
-	Settings:AddLabel(Settings, "Select UI Gamma:")
-	for themeName, themeData in pairs(Themes) do
-		Settings:AddButtonRow(Settings, "Theme: "..themeName, "Apply", function()
-			ApplyTheme(themeData)
+	-- Настройки вшиты автоматически
+	local Settings = Library:CreateTab("Settings", true)
+	Settings:AddLabel("Select Interface Gamma:")
+	for name, data in pairs(Themes) do
+		Settings:AddButtonRow("Gamma: "..name, "Apply", function()
+			ApplyTheme(data)
 		end)
 	end
 
