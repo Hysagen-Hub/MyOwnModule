@@ -3,11 +3,14 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
--- Логика Drag (Перетаскивание)
+-- Глобальный флаг, чтобы GUI не улетало при использовании слайдера
+_G.IsDraggingSlider = false
+
 local function MakeDraggable(gui)
     local dragging, dragInput, dragStart, startPos
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- Тянем окно только если НЕ зажат слайдер
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider then
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
@@ -20,7 +23,7 @@ local function MakeDraggable(gui)
         if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
     end)
     game:GetService("RunService").RenderStepped:Connect(function()
-        if dragging and dragInput then
+        if dragging and dragInput and not _G.IsDraggingSlider then
             local delta = dragInput.Position - dragStart
             gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
@@ -55,7 +58,7 @@ function UI_Module.CreateMain(hubTitle)
     
     local CurrentTheme = Themes["Black (Default)"]
     local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-    ScreenGui.Name = "Nexus_Final_V7"
+    ScreenGui.Name = "Nexus_Final_Fixed"
     ScreenGui.ResetOnSpawn = false
 
     local Main = Instance.new("Frame", ScreenGui)
@@ -106,7 +109,7 @@ function UI_Module.CreateMain(hubTitle)
             elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
             elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
             elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" then 
+            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" or obj.Name == "SliderKnob" then 
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
                 if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
             elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
@@ -114,7 +117,6 @@ function UI_Module.CreateMain(hubTitle)
         end
     end
 
-    -- МЕТОДЫ ВКЛАДОК
     function TabBase:AddLabel(text)
         local L = Instance.new("TextLabel", self.Page)
         L.Size = UDim2.new(1, -10, 0, 25)
@@ -155,10 +157,10 @@ function UI_Module.CreateMain(hubTitle)
     function TabBase:AddSlider(text, min, max, default, callback)
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
-        Row.Size = UDim2.new(1, -10, 0, 65)
+        Row.Size = UDim2.new(1, -10, 0, 75)
         Row.BackgroundColor3 = CurrentTheme.Secondary
         Instance.new("UICorner", Row)
-    
+
         local T = Instance.new("TextLabel", Row)
         T.Size = UDim2.new(1, 0, 0, 30)
         T.Position = UDim2.new(0, 15, 0, 5)
@@ -167,62 +169,76 @@ function UI_Module.CreateMain(hubTitle)
         T.BackgroundTransparency = 1
         T.Font = Enum.Font.Gotham
         T.TextXAlignment = Enum.TextXAlignment.Left
-    
+
         local SliderBack = Instance.new("Frame", Row)
         SliderBack.Name = "SliderBack"
-        SliderBack.Size = UDim2.new(1, -30, 0, 6)
-        SliderBack.Position = UDim2.new(0, 15, 0, 45)
+        SliderBack.Size = UDim2.new(1, -100, 0, 6)
+        SliderBack.Position = UDim2.new(0, 50, 0, 50)
         SliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         Instance.new("UICorner", SliderBack)
-    
+
         local SliderFill = Instance.new("Frame", SliderBack)
         SliderFill.Name = "SliderFill"
         SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
         SliderFill.BackgroundColor3 = CurrentTheme.Accent
         Instance.new("UICorner", SliderFill)
-    
-        -- ТА САМАЯ КНОПКА (Knob) на слайдере
+
         local SliderKnob = Instance.new("Frame", SliderFill)
         SliderKnob.Name = "SliderKnob"
         SliderKnob.Size = UDim2.new(0, 16, 0, 16)
-        SliderKnob.Position = UDim2.new(1, -8, 0.5, -8) -- Центрируем по краю заполнения
+        SliderKnob.Position = UDim2.new(1, -8, 0.5, -8)
         SliderKnob.BackgroundColor3 = CurrentTheme.Accent
-        SliderKnob.BorderSizePixel = 0
         Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
-        
-        -- Добавим небольшую обводку кругляшку, чтобы он не сливался
         local KnobStroke = Instance.new("UIStroke", SliderKnob)
-        KnobStroke.Color = Color3.new(0, 0, 0)
-        KnobStroke.Thickness = 1
-        KnobStroke.Transparency = 0.5
-    
-        local dragging = false
-        local function Update()
-            local mouseX = UserInputService:GetMouseLocation().X
-            local barX = SliderBack.AbsolutePosition.X
-            local barW = SliderBack.AbsoluteSize.X
-            local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            
-            local val = math.floor(min + (max - min) * perc)
-            SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. val
-            callback(val)
+        KnobStroke.Color = Color3.new(0,0,0)
+        KnobStroke.Transparency = 0.6
+
+        local currentVal = default
+        local function Update(val)
+            if val then currentVal = math.clamp(val, min, max)
+            else
+                local mouseX = UserInputService:GetMouseLocation().X
+                local barX = SliderBack.AbsolutePosition.X
+                local barW = SliderBack.AbsoluteSize.X
+                local perc = math.clamp((mouseX - barX) / barW, 0, 1)
+                currentVal = math.floor(min + (max - min) * perc)
+            end
+            SliderFill.Size = UDim2.new((currentVal - min) / (max - min), 0, 1, 0)
+            T.Text = text .. ": " .. currentVal
+            callback(currentVal)
         end
-    
-        -- Слушаем нажатие и на полоску, и на саму кнопку-ползунок
+
+        local function CreateNavBtn(char, pos)
+            local B = Instance.new("TextButton", Row)
+            B.Name = "ActionBtn"
+            B.Size = UDim2.new(0, 30, 0, 30)
+            B.Position = pos
+            B.BackgroundColor3 = CurrentTheme.Accent
+            B.Text = char
+            B.TextColor3 = CurrentTheme.BtnText
+            B.Font = Enum.Font.GothamBold
+            Instance.new("UICorner", B)
+            B.MouseButton1Click:Connect(function() Update(currentVal + (char == "+" and 1 or -1)) end)
+            return B
+        end
+
+        CreateNavBtn("-", UDim2.new(0, 10, 0, 38))
+        CreateNavBtn("+", UDim2.new(1, -40, 0, 38))
+
+        local dragging = false
         SliderBack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
+                _G.IsDraggingSlider = true -- Запрещаем окну двигаться
                 Update()
             end
         end)
-    
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = false
+                _G.IsDraggingSlider = false -- Разрешаем окну двигаться
             end
         end)
-    
         UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 Update()
@@ -270,7 +286,6 @@ function UI_Module.CreateMain(hubTitle)
         return NewTab
     end
 
-    -- Авто-настройки
     local Settings = Library:CreateTab("Settings", true)
     for name, data in pairs(Themes) do
         Settings:AddButtonRow("Gamma: "..name, "Apply", function() ApplyTheme(data) end)
