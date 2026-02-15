@@ -135,7 +135,7 @@ function UI_Module.CreateMain(hubTitle)
     local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
     ScreenGui.Name = "moduledGui"
     ScreenGui.ResetOnSpawn = false
-
+    Library.ScreenGui = ScreenGui
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 630, 0, 430)
