@@ -2,223 +2,215 @@ local UI_Module = {}
 local TweenService = game:GetService("TweenService")
 
 function UI_Module.CreateMain(hubTitle)
+	local Library = {}
+	
 	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "CustomAdvancedGUI"
+	ScreenGui.Name = "GeminiRedux_UI"
 	ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 	ScreenGui.ResetOnSpawn = false
 
-	-- Главный контейнер
-	local MainFrame = Instance.new("Frame")
-	MainFrame.Name = "MainFrame"
-	MainFrame.Size = UDim2.new(0, 650, 0, 420)
-	MainFrame.Position = UDim2.new(0.5, -325, 0.5, -210)
-	MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
-	MainFrame.BorderSizePixel = 0
-	MainFrame.Parent = ScreenGui
+	-- Главное окно
+	local Main = Instance.new("Frame")
+	Main.Name = "Main"
+	Main.Size = UDim2.new(0, 600, 0, 400)
+	Main.Position = UDim2.new(0.5, -300, 0.5, -200)
+	Main.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+	Main.BorderSizePixel = 0
+	Main.Parent = ScreenGui
 
-	Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 	local MainStroke = Instance.new("UIStroke")
-	MainStroke.Color = Color3.fromRGB(45, 45, 50)
-	MainStroke.Thickness = 1.5
-	MainStroke.Parent = MainFrame
+	MainStroke.Thickness = 1.2
+	MainStroke.Color = Color3.fromRGB(40, 40, 45)
+	MainStroke.Parent = Main
 
-	-- Левая панель (Скролл-меню вкладок)
-	local SidebarContainer = Instance.new("Frame")
-	SidebarContainer.Size = UDim2.new(0, 170, 1, 0)
-	SidebarContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 23)
-	SidebarContainer.BorderSizePixel = 0
-	SidebarContainer.Parent = MainFrame
-	Instance.new("UICorner", SidebarContainer).CornerRadius = UDim.new(0, 12)
-
-	local SidebarScroll = Instance.new("ScrollingFrame")
-	SidebarScroll.Size = UDim2.new(1, -10, 1, -60)
-	SidebarScroll.Position = UDim2.new(0, 5, 0, 50)
-	SidebarScroll.BackgroundTransparency = 1
-	SidebarScroll.ScrollBarThickness = 2
-	SidebarScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 65)
-	SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	SidebarScroll.Parent = SidebarContainer
+	-- Сайдбар (Скроллинг слева)
+	local Sidebar = Instance.new("ScrollingFrame")
+	Sidebar.Name = "Sidebar"
+	Sidebar.Size = UDim2.new(0, 160, 1, -20)
+	Sidebar.Position = UDim2.new(0, 10, 0, 10)
+	Sidebar.BackgroundTransparency = 1
+	Sidebar.ScrollBarThickness = 0 -- Невидимый скролл для красоты
+	Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Sidebar.Parent = Main
 
 	local SideLayout = Instance.new("UIListLayout")
-	SideLayout.Padding = UDim.new(0, 4)
-	SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	SideLayout.Parent = SidebarScroll
-	
+	SideLayout.Padding = UDim.new(0, 6)
+	SideLayout.Parent = Sidebar
 	SideLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, SideLayout.AbsoluteContentSize.Y)
+		Sidebar.CanvasSize = UDim2.new(0, 0, 0, SideLayout.AbsoluteContentSize.Y)
 	end)
 
-	local HubLabel = Instance.new("TextLabel")
-	HubLabel.Size = UDim2.new(1, 0, 0, 50)
-	HubLabel.Text = hubTitle
-	HubLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	HubLabel.Font = Enum.Font.GothamBold
-	HubLabel.TextSize = 18
-	HubLabel.BackgroundTransparency = 1
-	HubLabel.Parent = SidebarContainer
+	-- Контейнер для страниц
+	local PageContainer = Instance.new("Frame")
+	PageContainer.Name = "PageContainer"
+	PageContainer.Size = UDim2.new(1, -190, 1, -20)
+	PageContainer.Position = UDim2.new(0, 180, 0, 10)
+	PageContainer.BackgroundTransparency = 1
+	PageContainer.Parent = Main
 
-	-- Правая панель (Контейнер страниц)
-	local PagesFolder = Instance.new("Frame")
-	PagesFolder.Size = UDim2.new(1, -180, 1, -10)
-	PagesFolder.Position = UDim2.new(0, 175, 0, 5)
-	PagesFolder.BackgroundTransparency = 1
-	PagesFolder.Parent = MainFrame
+	local CurrentTab = nil
 
-	local Tabs = {}
-	local FirstTab = nil
-
-	function UI_Module:CreateTab(tabName)
-		local PageScroll = Instance.new("ScrollingFrame")
-		PageScroll.Name = tabName .. "_Tab"
-		PageScroll.Size = UDim2.new(1, 0, 1, 0)
-		PageScroll.BackgroundTransparency = 1
-		PageScroll.Visible = false
-		PageScroll.ScrollBarThickness = 3
-		PageScroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
-		PageScroll.Parent = PagesFolder
-
-		local PageLayout = Instance.new("UIListLayout")
-		PageLayout.Padding = UDim.new(0, 8)
-		PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		PageLayout.Parent = PageScroll
-
-		PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			PageScroll.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10)
-		end)
-
-		-- Автоматический заголовок страницы
-		local Header = Instance.new("TextLabel")
-		Header.Size = UDim2.new(1, 0, 0, 40)
-		Header.Text = tabName
-		Header.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Header.Font = Enum.Font.GothamBold
-		Header.TextSize = 22
-		Header.TextXAlignment = Enum.TextXAlignment.Left
-		Header.BackgroundTransparency = 1
-		Header.Parent = PageScroll
-
-		-- Кнопка переключения в сайдбаре
+	-- МЕТОД СОЗДАНИЯ ВКЛАДКИ
+	function Library:CreateTab(name)
+		local TabElements = {}
+		
+		-- Кнопка в меню
 		local TabBtn = Instance.new("TextButton")
-		TabBtn.Size = UDim2.new(0.9, 0, 0, 35)
-		TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-		TabBtn.Text = tabName
-		TabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+		TabBtn.Size = UDim2.new(1, -5, 0, 34)
+		TabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+		TabBtn.Text = name
+		TabBtn.TextColor3 = Color3.fromRGB(160, 160, 165)
 		TabBtn.Font = Enum.Font.GothamMedium
 		TabBtn.TextSize = 13
-		TabBtn.Parent = SidebarScroll
+		TabBtn.Parent = Sidebar
+		
 		Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
+		local BtnStroke = Instance.new("UIStroke")
+		BtnStroke.Color = Color3.fromRGB(45, 45, 50)
+		BtnStroke.Parent = TabBtn
 
-		TabBtn.MouseButton1Click:Connect(function()
-			for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-			for _, b in pairs(SidebarScroll:GetChildren()) do 
-				if b:IsA("TextButton") then
-					TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(30,30,35), TextColor3 = Color3.fromRGB(150,150,150)}):Play()
-				end
-			end
-			PageScroll.Visible = true
-			TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50,50,60), TextColor3 = Color3.fromRGB(255,255,255)}):Play()
+		-- Сама страница (Скроллинг справа)
+		local Page = Instance.new("ScrollingFrame")
+		Page.Name = name .. "_Page"
+		Page.Size = UDim2.new(1, 0, 1, 0)
+		Page.BackgroundTransparency = 1
+		Page.Visible = false
+		Page.ScrollBarThickness = 2
+		Page.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 65)
+		Page.Parent = PageContainer
+
+		local PageLayout = Instance.new("UIListLayout")
+		PageLayout.Padding = UDim.new(0, 10)
+		PageLayout.Parent = Page
+		PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10)
 		end)
 
-		if not FirstTab then 
-			FirstTab = PageScroll 
-			PageScroll.Visible = true
-			TabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
-			TabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+		-- Авто-заголовок
+		local Title = Instance.new("TextLabel")
+		Title.Size = UDim2.new(1, 0, 0, 35)
+		Title.Text = name
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.Font = Enum.Font.GothamBold
+		Title.TextSize = 20
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		Title.BackgroundTransparency = 1
+		Title.Parent = Page
+
+		-- Логика переключения
+		TabBtn.MouseButton1Click:Connect(function()
+			for _, p in pairs(PageContainer:GetChildren()) do p.Visible = false end
+			for _, b in pairs(Sidebar:GetChildren()) do
+				if b:IsA("TextButton") then
+					TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 25, 28), TextColor3 = Color3.fromRGB(160, 160, 165)}):Play()
+				end
+			end
+			Page.Visible = true
+			TweenService:Create(TabBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 180), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+		end)
+
+		-- Если это первая вкладка - открываем её сразу
+		if not CurrentTab then
+			CurrentTab = Page
+			Page.Visible = true
+			TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 180)
+			TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		end
 
-		local Elements = {}
+		--- ЭЛЕМЕНТЫ СТРАНИЦЫ ---
 
 		-- 1. Текст с кнопкой справа
-		function Elements:AddButtonRow(title, btnText, callback)
+		function TabElements:AddButton(text, btnText, callback)
 			local Frame = Instance.new("Frame")
-			Frame.Size = UDim2.new(1, -10, 0, 45)
-			Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-			Frame.Parent = PageScroll
-			Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+			Frame.Size = UDim2.new(1, -10, 0, 40)
+			Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+			Frame.Parent = Page
+			Instance.new("UICorner", Frame)
+			Instance.new("UIStroke", Frame).Color = Color3.fromRGB(35,35,40)
 
 			local Lbl = Instance.new("TextLabel")
-			Lbl.Size = UDim2.new(0.6, 0, 1, 0)
-			Lbl.Position = UDim2.new(0, 15, 0, 0)
-			Lbl.Text = title
-			Lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-			Lbl.Font = Enum.Font.Gotham
-			Lbl.TextSize = 14
-			Lbl.TextXAlignment = Enum.TextXAlignment.Left
+			Lbl.Size = UDim2.new(0.7, 0, 1, 0)
+			Lbl.Position = UDim2.new(0, 12, 0, 0)
 			Lbl.BackgroundTransparency = 1
+			Lbl.Text = text
+			Lbl.TextColor3 = Color3.fromRGB(200, 200, 205)
+			Lbl.Font = Enum.Font.Gotham
+			Lbl.TextXAlignment = Enum.TextXAlignment.Left
 			Lbl.Parent = Frame
 
 			local Btn = Instance.new("TextButton")
-			Btn.Size = UDim2.new(0.3, 0, 0, 30)
-			Btn.Position = UDim2.new(0.65, 0, 0.5, -15)
-			Btn.BackgroundColor3 = Color3.fromRGB(70, 80, 220)
+			Btn.Size = UDim2.new(0.25, 0, 0, 26)
+			Btn.Position = UDim2.new(0.72, 0, 0.5, -13)
+			Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 			Btn.Text = btnText
-			Btn.TextColor3 = Color3.new(1,1,1)
+			Btn.TextColor3 = Color3.fromRGB(255,255,255)
 			Btn.Font = Enum.Font.GothamBold
 			Btn.Parent = Frame
-			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
 			
 			Btn.MouseButton1Click:Connect(callback)
 		end
 
-		-- 2. Текст с кнопкой и под-скроллом
-		function Elements:AddScrollRow(title, btnText, height, callback)
+		-- 2. Текст с кнопкой + Scrolling Frame снизу
+		function TabElements:AddComplex(text, btnText, height, callback)
 			local Container = Instance.new("Frame")
-			Container.Size = UDim2.new(1, -10, 0, 50 + height)
-			Container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-			Container.Parent = PageScroll
+			Container.Size = UDim2.new(1, -10, 0, 45 + height)
+			Container.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+			Container.Parent = Page
 			Instance.new("UICorner", Container)
 
 			local Lbl = Instance.new("TextLabel")
-			Lbl.Size = UDim2.new(0.6, 0, 0, 50)
-			Lbl.Position = UDim2.new(0, 15, 0, 0)
-			Lbl.Text = title
-			Lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-			Lbl.Font = Enum.Font.Gotham
+			Lbl.Size = UDim2.new(0.7, 0, 0, 40)
+			Lbl.Position = UDim2.new(0, 12, 0, 0)
 			Lbl.BackgroundTransparency = 1
+			Lbl.Text = text
+			Lbl.TextColor3 = Color3.fromRGB(200, 200, 205)
+			Lbl.Font = Enum.Font.Gotham
 			Lbl.TextXAlignment = Enum.TextXAlignment.Left
 			Lbl.Parent = Container
 
 			local Btn = Instance.new("TextButton")
-			Btn.Size = UDim2.new(0.3, 0, 0, 30)
-			Btn.Position = UDim2.new(0.65, 0, 0, 10)
-			Btn.BackgroundColor3 = Color3.fromRGB(40, 150, 90)
+			Btn.Size = UDim2.new(0.25, 0, 0, 26)
+			Btn.Position = UDim2.new(0.72, 0, 0, 7)
+			Btn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
 			Btn.Text = btnText
+			Btn.TextColor3 = Color3.new(1,1,1)
 			Btn.Parent = Container
-			Instance.new("UICorner", Btn)
+			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
 
-			local InnerScroll = Instance.new("ScrollingFrame")
-			InnerScroll.Size = UDim2.new(1, -20, 0, height - 10)
-			InnerScroll.Position = UDim2.new(0, 10, 0, 50)
-			InnerScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-			InnerScroll.ScrollBarThickness = 2
-			InnerScroll.Parent = Container
-			Instance.new("UICorner", InnerScroll)
+			local SubScroll = Instance.new("ScrollingFrame")
+			SubScroll.Size = UDim2.new(1, -20, 0, height - 10)
+			SubScroll.Position = UDim2.new(0, 10, 0, 40)
+			SubScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+			SubScroll.ScrollBarThickness = 2
+			SubScroll.Parent = Container
+			Instance.new("UICorner", SubScroll)
 			
-			local InnerLayout = Instance.new("UIListLayout")
-			InnerLayout.Padding = UDim.new(0, 2)
-			InnerLayout.Parent = InnerScroll
+			local SubLayout = Instance.new("UIListLayout")
+			SubLayout.Padding = UDim.new(0, 2)
+			SubLayout.Parent = SubScroll
 
-			Btn.MouseButton1Click:Connect(function() callback(InnerScroll) end)
-			return InnerScroll
+			Btn.MouseButton1Click:Connect(function() callback(SubScroll) end)
 		end
 
 		-- 3. Обычный текст
-		function Elements:AddLabel(text)
+		function TabElements:AddLabel(text)
 			local Lbl = Instance.new("TextLabel")
-			Lbl.Size = UDim2.new(1, -10, 0, 25)
+			Lbl.Size = UDim2.new(1, -10, 0, 20)
+			Lbl.BackgroundTransparency = 1
 			Lbl.Text = text
-			Lbl.TextColor3 = Color3.fromRGB(140, 140, 150)
+			Lbl.TextColor3 = Color3.fromRGB(150, 150, 155)
 			Lbl.Font = Enum.Font.Gotham
 			Lbl.TextSize = 13
-			Lbl.BackgroundTransparency = 1
 			Lbl.TextXAlignment = Enum.TextXAlignment.Left
-			Lbl.Parent = PageScroll
+			Lbl.Parent = Page
 		end
 
-		return Elements
+		return TabElements
 	end
 
-	return UI_Module
+	return Library
 end
 
 return UI_Module
