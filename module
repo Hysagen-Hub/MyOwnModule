@@ -295,7 +295,7 @@ function UI_Module.CreateMain(hubTitle)
         BindBtn.TextSize = 16
         Instance.new("UICorner", BindBtn)
     
-        -- Логика toggle
+        -- Функция обновления состояния
         local function SetToggle(state)
             Toggled = state
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
@@ -306,11 +306,12 @@ function UI_Module.CreateMain(hubTitle)
             callback(Toggled)
         end
     
+        -- Клик по toggle кнопке
         ToggleBtn.MouseButton1Click:Connect(function()
             SetToggle(not Toggled)
         end)
     
-        -- Логика бинда
+        -- Настройка бинда (изменение клавиши)
         BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
@@ -336,10 +337,23 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        -- Обработка нажатия бинда
-        UserInputService.InputBegan:Connect(function(input)
-            if not Binding and input.KeyCode == CurrentKey and not input.UserInputState == Enum.UserInputState.Cancel then
+        -- СОЗДАЕМ ОТДЕЛЬНОЕ СОЕДИНЕНИЕ ДЛЯ БИНДА
+        -- Используем корутину для обработки нажатий
+        local bindThread
+        bindThread = UserInputService.InputBegan:Connect(function(input)
+            -- Проверяем что这不是 процесс ввода в чат и т.д.
+            if UserInputService:GetFocusedTextBox() then return end
+            
+            -- Проверяем что нажата нужная клавиша и не в режиме биндинга
+            if not Binding and input.KeyCode == CurrentKey and input.UserInputState == Enum.UserInputState.Begin then
                 SetToggle(not Toggled)
+            end
+        end)
+        
+        -- Автоматически отключаем соединение при уничтожении ряда
+        Row.AncestryChanged:Connect(function()
+            if bindThread then
+                bindThread:Disconnect()
             end
         end)
     end
