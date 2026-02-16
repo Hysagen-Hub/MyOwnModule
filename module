@@ -5,123 +5,55 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
 _G.IsDraggingSlider = false
-_G.IsBindingKey = false -- Флаг для отслеживания режима биндинга
 
 -- Файл для сохранения темы
 local THEME_FILE = "hysagen_ui_theme.txt"
 
--- Функция загрузки сохраненной темы
 local function loadSavedTheme()
     local success, result = pcall(function()
         return HttpService:JSONDecode(readfile(THEME_FILE))
     end)
-    
     if success and result and result.theme then
         return result.theme
     end
     return nil
 end
 
--- Функция сохранения темы
 local function saveTheme(themeName)
     local settings = {
         theme = themeName,
         savedAt = DateTime.now():ToIsoDate()
     }
-    
-    local success = pcall(function()
+    pcall(function()
         writefile(THEME_FILE, HttpService:JSONEncode(settings))
     end)
-    
-    return success
 end
 
 local function MakeDraggable(gui)
-    local dragging = false
-    local dragInput = nil
-    local dragStart = nil
-    local startPos = nil
-    
+    local dragging, dragInput, dragStart, startPos
     local function updatePosition(input)
-        if not dragging or not dragStart or not startPos then return end
         local delta = input.Position - dragStart
-        gui.Position = UDim2.new(
-            startPos.X.Scale, 
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale, 
-            startPos.Y.Offset + delta.Y
-        )
+        gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider and not _G.IsBindingKey then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider then
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
         end
     end)
-    
     gui.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-            if dragging and not _G.IsDraggingSlider then
-                updatePosition(input)
-            end
+        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+            updatePosition(input)
         end
     end)
-end
-
--- Функция для получения названия клавиши
-local function GetKeyName(keyCode)
-    local keyNames = {
-        [Enum.KeyCode.LeftShift] = "LShift",
-        [Enum.KeyCode.RightShift] = "RShift",
-        [Enum.KeyCode.LeftControl] = "LCtrl",
-        [Enum.KeyCode.RightControl] = "RCtrl",
-        [Enum.KeyCode.LeftAlt] = "LAlt",
-        [Enum.KeyCode.RightAlt] = "RAlt",
-        [Enum.KeyCode.CapsLock] = "Caps",
-        [Enum.KeyCode.PageUp] = "PgUp",
-        [Enum.KeyCode.PageDown] = "PgDn",
-        [Enum.KeyCode.Insert] = "Ins",
-        [Enum.KeyCode.Delete] = "Del",
-        [Enum.KeyCode.Home] = "Home",
-        [Enum.KeyCode.End] = "End",
-        [Enum.KeyCode.Space] = "Space",
-        [Enum.KeyCode.Return] = "Enter",
-        [Enum.KeyCode.Backspace] = "Bksp",
-        [Enum.KeyCode.Tab] = "Tab",
-        [Enum.KeyCode.Escape] = "Esc",
-        [Enum.KeyCode.Minus] = "-",
-        [Enum.KeyCode.Equals] = "=",
-        [Enum.KeyCode.LeftBracket] = "[",
-        [Enum.KeyCode.RightBracket] = "]",
-        [Enum.KeyCode.Semicolon] = ";",
-        [Enum.KeyCode.Quote] = "'",
-        [Enum.KeyCode.Comma] = ",",
-        [Enum.KeyCode.Period] = ".",
-        [Enum.KeyCode.Slash] = "/",
-        [Enum.KeyCode.BackSlash] = "\\",
-        [Enum.KeyCode.Grave] = "`",
-    }
-    
-    -- Для букв и цифр используем стандартное имя
-    local keyName = keyNames[keyCode]
-    if not keyName then
-        keyName = keyCode.Name:gsub("KeyCode%.", "")
-    end
-    
-    return keyName
 end
 
 function UI_Module.CreateMain(hubTitle)
-    local Library = { TabButtons = {} }
+    local Library = { TabButtons = {}, Object = nil }
     local TabBase = {}
     TabBase.__index = TabBase
     
@@ -130,37 +62,9 @@ function UI_Module.CreateMain(hubTitle)
             Main = Color3.fromRGB(12, 12, 12), Sidebar = Color3.fromRGB(18, 18, 18), Stroke = Color3.fromRGB(35, 35, 35),
             Accent = Color3.fromRGB(255, 255, 255), Text = Color3.fromRGB(255, 255, 255), Secondary = Color3.fromRGB(25, 25, 25), BtnText = Color3.fromRGB(0, 0, 0)
         },
-        ["Ocean Abyss"] = {
-            Main = Color3.fromRGB(10, 15, 20), Sidebar = Color3.fromRGB(15, 20, 30), Stroke = Color3.fromRGB(30, 45, 60),
-            Accent = Color3.fromRGB(0, 180, 255), Text = Color3.fromRGB(200, 230, 255), Secondary = Color3.fromRGB(20, 30, 45), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Blood Moon"] = {
-            Main = Color3.fromRGB(15, 5, 5), Sidebar = Color3.fromRGB(25, 10, 10), Stroke = Color3.fromRGB(60, 20, 20),
-            Accent = Color3.fromRGB(255, 50, 50), Text = Color3.fromRGB(255, 200, 200), Secondary = Color3.fromRGB(35, 15, 15), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Emerald Isle"] = {
-            Main = Color3.fromRGB(5, 15, 10), Sidebar = Color3.fromRGB(10, 25, 15), Stroke = Color3.fromRGB(20, 60, 40),
-            Accent = Color3.fromRGB(50, 255, 150), Text = Color3.fromRGB(200, 255, 220), Secondary = Color3.fromRGB(15, 35, 25), BtnText = Color3.fromRGB(0, 50, 20)
-        },
         ["Cyber Neon"] = {
             Main = Color3.fromRGB(20, 0, 30), Sidebar = Color3.fromRGB(35, 5, 50), Stroke = Color3.fromRGB(100, 0, 150),
             Accent = Color3.fromRGB(255, 0, 255), Text = Color3.fromRGB(240, 200, 255), Secondary = Color3.fromRGB(45, 10, 65), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Solar Flare"] = {
-            Main = Color3.fromRGB(25, 15, 5), Sidebar = Color3.fromRGB(35, 25, 10), Stroke = Color3.fromRGB(80, 50, 20),
-            Accent = Color3.fromRGB(255, 160, 0), Text = Color3.fromRGB(255, 230, 200), Secondary = Color3.fromRGB(45, 35, 20), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Rose Quartz"] = {
-            Main = Color3.fromRGB(30, 20, 25), Sidebar = Color3.fromRGB(45, 30, 40), Stroke = Color3.fromRGB(90, 60, 75),
-            Accent = Color3.fromRGB(255, 150, 200), Text = Color3.fromRGB(255, 220, 235), Secondary = Color3.fromRGB(55, 40, 50), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Amethyst"] = {
-            Main = Color3.fromRGB(15, 10, 25), Sidebar = Color3.fromRGB(25, 15, 40), Stroke = Color3.fromRGB(60, 40, 100),
-            Accent = Color3.fromRGB(180, 100, 255), Text = Color3.fromRGB(230, 210, 255), Secondary = Color3.fromRGB(35, 25, 55), BtnText = Color3.fromRGB(255, 255, 255)
-        },
-        ["Slate Gray"] = {
-            Main = Color3.fromRGB(25, 25, 25), Sidebar = Color3.fromRGB(35, 35, 35), Stroke = Color3.fromRGB(55, 55, 55),
-            Accent = Color3.fromRGB(150, 160, 175), Text = Color3.fromRGB(220, 220, 220), Secondary = Color3.fromRGB(45, 45, 45), BtnText = Color3.fromRGB(255, 255, 255)
         },
         ["Gold Deluxe"] = {
             Main = Color3.fromRGB(15, 15, 10), Sidebar = Color3.fromRGB(25, 25, 15), Stroke = Color3.fromRGB(70, 60, 30),
@@ -169,17 +73,14 @@ function UI_Module.CreateMain(hubTitle)
     }
     
     local CurrentTheme = Themes["Midnight"]
-    
-    -- Загружаем сохраненную тему
     local savedThemeName = loadSavedTheme()
-    if savedThemeName and Themes[savedThemeName] then
-        CurrentTheme = Themes[savedThemeName]
-    end
+    if savedThemeName and Themes[savedThemeName] then CurrentTheme = Themes[savedThemeName] end
     
     local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer:WaitForChild("PlayerGui"))
-    ScreenGui.Name = "moduledGui"
+    ScreenGui.Name = "Hysagen_UI_" .. math.random(100, 999)
     ScreenGui.ResetOnSpawn = false
-    Library.ScreenGui = ScreenGui
+    Library.Object = ScreenGui -- Ссылка для внешнего скрипта
+    
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 630, 0, 430)
@@ -208,7 +109,6 @@ function UI_Module.CreateMain(hubTitle)
     Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
 
     local Title = Instance.new("TextLabel", Sidebar)
-    Title.Name = "HubTitle"
     Title.Size = UDim2.new(1, 0, 0, 60)
     Title.Text = hubTitle
     Title.TextColor3 = CurrentTheme.Text
@@ -222,48 +122,7 @@ function UI_Module.CreateMain(hubTitle)
     PagesFolder.Position = UDim2.new(0, 185, 0, 10)
     PagesFolder.BackgroundTransparency = 1
 
-    local function ApplyTheme(theme, themeName)
-        CurrentTheme = theme
-        local tInfo = TweenInfo.new(0.4)
-        
-        for _, obj in pairs(ScreenGui:GetDescendants()) do
-            if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
-            elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
-            elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
-            elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" or obj.Name == "SliderKnob" or obj.Name == "KeyBindBtn" then 
-                TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
-                if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
-            elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
-            end
-        end
-
-        for _, btn in pairs(Library.TabButtons) do
-            if btn:GetAttribute("Active") == true then
-                TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Accent, TextColor3 = theme.BtnText}):Play()
-            else
-                TweenService:Create(btn, tInfo, {BackgroundColor3 = theme.Secondary, TextColor3 = theme.Text}):Play()
-            end
-        end
-        
-        -- Сохраняем выбранную тему
-        if themeName then
-            saveTheme(themeName)
-        end
-    end
-
-    function TabBase:AddLabel(text)
-        self.Count = self.Count + 1
-        local L = Instance.new("TextLabel", self.Page)
-        L.Size = UDim2.new(1, -10, 0, 30)
-        L.BackgroundTransparency = 1
-        L.Text = text
-        L.TextColor3 = CurrentTheme.Text
-        L.Font = Enum.Font.GothamSemibold
-        L.TextSize = 15
-        L.TextXAlignment = Enum.TextXAlignment.Left
-        L.LayoutOrder = self.Count
-    end
+    -- [ ФУНКЦИИ МОДУЛЯ ] --
 
     function TabBase:AddButtonRow(text, btnText, callback)
         self.Count = self.Count + 1
@@ -297,86 +156,11 @@ function UI_Module.CreateMain(hubTitle)
         B.MouseButton1Click:Connect(callback)
     end
 
-    function TabBase:AddSlider(text, min, max, default, callback)
-        self.Count = self.Count + 1
-        local Row = Instance.new("Frame", self.Page)
-        Row.Name = "Row"
-        Row.Size = UDim2.new(1, -10, 0, 80)
-        Row.BackgroundColor3 = CurrentTheme.Secondary
-        Row.LayoutOrder = self.Count
-        Instance.new("UICorner", Row)
-
-        local T = Instance.new("TextLabel", Row)
-        T.Size = UDim2.new(1, 0, 0, 35)
-        T.Position = UDim2.new(0, 15, 0, 5)
-        T.Text = text .. ": " .. default
-        T.TextColor3 = CurrentTheme.Text
-        T.Font = Enum.Font.GothamMedium
-        T.TextSize = 16
-        T.BackgroundTransparency = 1
-        T.TextXAlignment = Enum.TextXAlignment.Left
-
-        local SliderBack = Instance.new("Frame", Row)
-        SliderBack.Name = "SliderBack"
-        SliderBack.Size = UDim2.new(1, -30, 0, 8)
-        SliderBack.Position = UDim2.new(0, 15, 0, 55)
-        SliderBack.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        Instance.new("UICorner", SliderBack)
-
-        local SliderFill = Instance.new("Frame", SliderBack)
-        SliderFill.Name = "SliderFill"
-        SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-        SliderFill.BackgroundColor3 = CurrentTheme.Accent
-        Instance.new("UICorner", SliderFill)
-
-        local SliderKnob = Instance.new("Frame", SliderFill)
-        SliderKnob.Name = "SliderKnob"
-        SliderKnob.Size = UDim2.new(0, 20, 0, 20)
-        SliderKnob.Position = UDim2.new(1, -10, 0.5, -10)
-        SliderKnob.BackgroundColor3 = CurrentTheme.Accent
-        Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
-        local KnobStroke = Instance.new("UIStroke", SliderKnob)
-        KnobStroke.Color = Color3.new(0,0,0)
-        KnobStroke.Transparency = 0.5
-
-        local function UpdateFromMouse(mouseX)
-            local barX = SliderBack.AbsolutePosition.X
-            local barW = SliderBack.AbsoluteSize.X
-            local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            local val = math.floor(min + (max - min) * perc)
-            SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. val
-            callback(val)
-        end
-
-        local dragging = false
-        SliderBack.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true; _G.IsDraggingSlider = true; UpdateFromMouse(input.Position.X)
-            end
-        end)
-        SliderKnob.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true; _G.IsDraggingSlider = true
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false; _G.IsDraggingSlider = false
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                UpdateFromMouse(input.Position.X)
-            end
-        end)
-    end
-
     function TabBase:AddToggleButton(text, default, callback)
         self.Count = self.Count + 1
         local Toggled = default or false
-        local BoundKey = nil -- Клавиша для бинда
-        local IsWaitingForKey = false
+        local CurrentBind = "NONE"
+        local IsBinding = false
         
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
@@ -391,131 +175,122 @@ function UI_Module.CreateMain(hubTitle)
         L.Text = text
         L.TextColor3 = CurrentTheme.Text
         L.Font = Enum.Font.GothamMedium
-        L.TextSize = 16
+        L.TextSize = 15
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
-        -- Кнопка для бинда (справа от свитчера)
-        local KeyBindBtn = Instance.new("TextButton", Row)
-        KeyBindBtn.Name = "KeyBindBtn"
-        KeyBindBtn.Size = UDim2.new(0.15, 0, 0, 30)
-        KeyBindBtn.Position = UDim2.new(0.65, 0, 0.5, -15)
-        KeyBindBtn.BackgroundColor3 = CurrentTheme.Accent
-        KeyBindBtn.Text = "None"
-        KeyBindBtn.TextColor3 = CurrentTheme.BtnText
-        KeyBindBtn.Font = Enum.Font.GothamBold
-        KeyBindBtn.TextSize = 14
-        Instance.new("UICorner", KeyBindBtn).CornerRadius = UDim.new(0, 6)
-
-        -- Свитчер (переключатель)
+        -- iPhone Switcher
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtnFrame"
-        ToggleBtn.Size = UDim2.new(0.15, 0, 0, 38)
-        ToggleBtn.Position = UDim2.new(0.82, 0, 0.5, -19)
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) 
-        ToggleBtn.Text = "" 
-        ToggleBtn.AutoButtonColor = false
-        Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+        ToggleBtn.Size = UDim2.new(0, 55, 0, 28)
+        ToggleBtn.Position = UDim2.new(0.45, 0, 0.5, -14)
+        ToggleBtn.BackgroundColor3 = Toggled and Color3.fromRGB(50, 215, 75) or Color3.fromRGB(40, 40, 45)
+        ToggleBtn.Text = ""
+        Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 
         local Dot = Instance.new("Frame", ToggleBtn)
-        Dot.Name = "StatusDot"
-        Dot.Size = UDim2.new(0, 8, 0, 8)
-        Dot.Position = UDim2.new(0, 10, 0.5, -4)
-        Dot.BackgroundColor3 = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-        Dot.BorderSizePixel = 0
+        Dot.Size = UDim2.new(0, 22, 0, 22)
+        Dot.Position = Toggled and UDim2.new(1, -25, 0.5, -11) or UDim2.new(0, 3, 0.5, -11)
+        Dot.BackgroundColor3 = Color3.new(1,1,1)
         Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
 
-        local StatusLabel = Instance.new("TextLabel", ToggleBtn)
-        StatusLabel.Size = UDim2.new(1, -25, 1, 0)
-        StatusLabel.Position = UDim2.new(0, 22, 0, 0)
-        StatusLabel.BackgroundTransparency = 1
-        StatusLabel.Text = Toggled and "ON" or "OFF"
-        StatusLabel.TextColor3 = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-        StatusLabel.Font = Enum.Font.GothamBold
-        StatusLabel.TextSize = 14
-        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-        -- Функция для обработки нажатия клавиши
-        local function onKeyPress(input)
-            if IsWaitingForKey and input.UserInputType == Enum.UserInputType.Keyboard then
-                IsWaitingForKey = false
-                _G.IsBindingKey = false
-                
-                if input.KeyCode == Enum.KeyCode.Escape then
-                    BoundKey = nil
-                    KeyBindBtn.Text = "None"
-                else
-                    BoundKey = input.KeyCode
-                    KeyBindBtn.Text = GetKeyName(input.KeyCode)
-                end
-                
-                KeyBindBtn.BackgroundColor3 = CurrentTheme.Accent
-            end
+        local function Toggle()
+            Toggled = not Toggled
+            local targetPos = Toggled and UDim2.new(1, -25, 0.5, -11) or UDim2.new(0, 3, 0.5, -11)
+            local targetCol = Toggled and Color3.fromRGB(50, 215, 75) or Color3.fromRGB(40, 40, 45)
+            TweenService:Create(Dot, TweenInfo.new(0.2), {Position = targetPos}):Play()
+            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = targetCol}):Play()
+            callback(Toggled)
         end
+        ToggleBtn.MouseButton1Click:Connect(Toggle)
 
-        -- Подключаем обработчик нажатий
-        local connection
-        connection = UserInputService.InputBegan:Connect(function(input)
-            onKeyPress(input)
-            
-            -- Если есть забинженная клавиша и не в режиме ожидания, переключаем состояние
-            if BoundKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == BoundKey and not IsWaitingForKey and not _G.IsBindingKey then
-                Toggled = not Toggled
-                local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-                local targetText = Toggled and "ON" or "OFF"
-                
-                TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
-                TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
-                StatusLabel.Text = targetText
-                callback(Toggled)
-            end
+        -- Bind System
+        local BindBtn = Instance.new("TextButton", Row)
+        BindBtn.Size = UDim2.new(0, 80, 0, 30)
+        BindBtn.Position = UDim2.new(1, -95, 0.5, -15)
+        BindBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        BindBtn.Text = "NONE"
+        BindBtn.TextColor3 = CurrentTheme.Text
+        BindBtn.Font = Enum.Font.GothamBold
+        BindBtn.TextSize = 12
+        Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 6)
+        local BStroke = Instance.new("UIStroke", BindBtn)
+        BStroke.Color = CurrentTheme.Stroke
+
+        BindBtn.MouseButton1Click:Connect(function()
+            if IsBinding then return end
+            IsBinding = true
+            BindBtn.Text = "..."
+            local conn
+            conn = UserInputService.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.Keyboard then
+                    CurrentBind = inp.KeyCode.Name
+                    BindBtn.Text = CurrentBind:upper()
+                    IsBinding = false
+                    conn:Disconnect()
+                end
+            end)
         end)
 
-        -- Клик по свитчеру (меняет состояние)
-        ToggleBtn.MouseButton1Click:Connect(function()
-            if not IsWaitingForKey then
-                Toggled = not Toggled
-                local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-                local targetText = Toggled and "ON" or "OFF"
-                
-                TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
-                TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
-                StatusLabel.Text = targetText
-                callback(Toggled)
-            end
-        end)
-
-        -- Клик по кнопке бинда (вход в режим ожидания)
-        KeyBindBtn.MouseButton1Click:Connect(function()
-            if not IsWaitingForKey then
-                IsWaitingForKey = true
-                _G.IsBindingKey = true
-                KeyBindBtn.Text = "..."
-                KeyBindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-            end
-        end)
-
-        -- Очистка при уничтожении
-        Row.Destroying:Connect(function()
-            if connection then
-                connection:Disconnect()
-            end
+        UserInputService.InputBegan:Connect(function(inp, gpe)
+            if not gpe and inp.KeyCode.Name == CurrentBind then Toggle() end
         end)
     end
 
+    function TabBase:AddSlider(text, min, max, default, callback)
+        self.Count = self.Count + 1
+        local Row = Instance.new("Frame", self.Page)
+        Row.Name = "Row"
+        Row.Size = UDim2.new(1, -10, 0, 75)
+        Row.BackgroundColor3 = CurrentTheme.Secondary
+        Row.LayoutOrder = self.Count
+        Instance.new("UICorner", Row)
+
+        local T = Instance.new("TextLabel", Row)
+        T.Size = UDim2.new(1, -20, 0, 30)
+        T.Position = UDim2.new(0, 15, 0, 5)
+        T.Text = text .. ": " .. default
+        T.TextColor3 = CurrentTheme.Text
+        T.Font = Enum.Font.GothamMedium
+        T.BackgroundTransparency = 1
+        T.TextXAlignment = Enum.TextXAlignment.Left
+
+        local Bar = Instance.new("Frame", Row)
+        Bar.Name = "SliderBack"
+        Bar.Size = UDim2.new(1, -30, 0, 6)
+        Bar.Position = UDim2.new(0, 15, 0, 50)
+        Bar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Instance.new("UICorner", Bar)
+
+        local Fill = Instance.new("Frame", Bar)
+        Fill.Name = "SliderFill"
+        Fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+        Fill.BackgroundColor3 = CurrentTheme.Accent
+        Instance.new("UICorner", Fill)
+
+        local function Update(input)
+            local per = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+            local val = math.floor(min + (max - min) * per)
+            Fill.Size = UDim2.new(per, 0, 1, 0)
+            T.Text = text .. ": " .. val
+            callback(val)
+        end
+
+        local drag = false
+        Bar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = true; _G.IsDraggingSlider = true; Update(i) end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false; _G.IsDraggingSlider = false end end)
+        UserInputService.InputChanged:Connect(function(i) if drag and i.UserInputType == Enum.UserInputType.MouseMovement then Update(i) end end)
+    end
+
     function Library:CreateTab(name, isSettings)
-        local NewTab = setmetatable({}, TabBase)
-        NewTab.Count = 0 
-        
+        local NewTab = setmetatable({Count = 0}, TabBase)
         local TabBtn = Instance.new("TextButton", SidebarScroll)
-        TabBtn.Name = "TabBtn"
-        TabBtn.Size = UDim2.new(0.95, 0, 0, 42)
+        TabBtn.Size = UDim2.new(0.95, 0, 0, 38)
         TabBtn.BackgroundColor3 = CurrentTheme.Secondary
         TabBtn.Text = name
         TabBtn.TextColor3 = CurrentTheme.Text
         TabBtn.Font = Enum.Font.GothamBold
-        TabBtn.TextSize = 16
-        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", TabBtn)
         table.insert(Library.TabButtons, TabBtn)
 
         local Page = Instance.new("ScrollingFrame", PagesFolder)
@@ -523,39 +298,18 @@ function UI_Module.CreateMain(hubTitle)
         Page.BackgroundTransparency = 1
         Page.Visible = false
         Page.ScrollBarThickness = 0
-        Page.Name = "Page_"..name
-        
-        local List = Instance.new("UIListLayout", Page)
-        List.Padding = UDim.new(0, 10)
-        List.SortOrder = Enum.SortOrder.LayoutOrder
-
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
         NewTab.Page = Page
 
         TabBtn.MouseButton1Click:Connect(function()
             for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
-            for _, b in pairs(Library.TabButtons) do
-                b:SetAttribute("Active", false)
-                TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
-            end
+            for _, b in pairs(Library.TabButtons) do b.BackgroundColor3 = CurrentTheme.Secondary end
             Page.Visible = true
-            TabBtn:SetAttribute("Active", true)
-            TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent, TextColor3 = CurrentTheme.BtnText}):Play()
-        end)
-
-        if not isSettings and #Library.TabButtons == 1 then
-            Page.Visible = true
-            TabBtn:SetAttribute("Active", true)
             TabBtn.BackgroundColor3 = CurrentTheme.Accent
-            TabBtn.TextColor3 = CurrentTheme.BtnText
-        end
-        return NewTab
-    end
-
-    local Settings = Library:CreateTab("Settings", true)
-    for name, data in pairs(Themes) do
-        Settings:AddButtonRow(name, "Set", function() 
-            ApplyTheme(data, name) 
         end)
+
+        if not isSettings and #Library.TabButtons == 1 then Page.Visible = true; TabBtn.BackgroundColor3 = CurrentTheme.Accent end
+        return NewTab
     end
 
     return Library
