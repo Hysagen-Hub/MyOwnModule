@@ -147,19 +147,19 @@ function UI_Module.CreateMain(hubTitle)
     MainStroke.Thickness = 2
     MainStroke.Color = CurrentTheme.Stroke
 
-    -- ===== КНОПКА ЗАКРЫТИЯ =====
+    -- ===== КНОПКА ЗАКРЫТИЯ (уменьшенная и в другом месте) =====
     local CloseButton = Instance.new("TextButton", Main)
     CloseButton.Name = "CloseButton"
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    CloseButton.Size = UDim2.new(0, 20, 0, 20)  -- Уменьшил до 20x20
+    CloseButton.Position = UDim2.new(1, -25, 0, 5)  -- Сдвинул левее
     CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    CloseButton.Text = "X"
+    CloseButton.Text = "×"  -- Символ умножения как крестик
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.TextSize = 18
+    CloseButton.TextSize = 16
     CloseButton.AutoButtonColor = false
     CloseButton.ZIndex = 10
-    Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 4)  -- Меньше скругление
 
     -- Hover эффект
     CloseButton.MouseEnter:Connect(function()
