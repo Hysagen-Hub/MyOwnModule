@@ -161,7 +161,12 @@ function UI_Module.CreateMain(hubTitle)
     SidebarScroll.Position = UDim2.new(0, 5, 0, 65)
     SidebarScroll.BackgroundTransparency = 1
     SidebarScroll.ScrollBarThickness = 0
-    Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
+    SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    local listLayout = Instance.new("UIListLayout", SidebarScroll)
+    listLayout.Padding = UDim.new(0, 5)
+    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
+    end)
 
     local Title = Instance.new("TextLabel", Sidebar)
     Title.Name = "HubTitle"
@@ -183,14 +188,21 @@ function UI_Module.CreateMain(hubTitle)
         local tInfo = TweenInfo.new(0.4)
         
         for _, obj in pairs(ScreenGui:GetDescendants()) do
-            if obj.Name == "MainFrame" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
-            elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
-            elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
-            elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
+            if obj.Name == "MainFrame" then 
+                TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
+            elseif obj.Name == "Sidebar" then 
+                TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
+            elseif obj:IsA("UIStroke") and obj.Parent.Name ~= "SliderKnob" then 
+                TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
+            elseif obj.Name == "Row" or obj.Name == "SliderBack" then 
+                TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
             elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" or obj.Name == "SliderKnob" then 
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
-                if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
-            elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
+                if obj:IsA("TextButton") then 
+                    TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
+                end
+            elseif obj:IsA("TextLabel") and obj.Parent.Name ~= "SliderKnob" then 
+                TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
             end
         end
 
@@ -299,28 +311,36 @@ function UI_Module.CreateMain(hubTitle)
             local barX = SliderBack.AbsolutePosition.X
             local barW = SliderBack.AbsoluteSize.X
             local perc = math.clamp((mouseX - barX) / barW, 0, 1)
-            local val = math.floor(min + (max - min) * perc)
+            local val = min + (max - min) * perc
+            local roundedVal = math.floor(val * 10) / 10
             SliderFill.Size = UDim2.new(perc, 0, 1, 0)
-            T.Text = text .. ": " .. val
-            callback(val)
+            T.Text = text .. ": " .. roundedVal
+            callback(roundedVal)
         end
 
         local dragging = false
         SliderBack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true; _G.IsDraggingSlider = true; UpdateFromMouse(input.Position.X)
+                dragging = true
+                _G.IsDraggingSlider = true
+                UpdateFromMouse(input.Position.X)
             end
         end)
+        
         SliderKnob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true; _G.IsDraggingSlider = true
+                dragging = true
+                _G.IsDraggingSlider = true
             end
         end)
+        
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false; _G.IsDraggingSlider = false
+                dragging = false
+                _G.IsDraggingSlider = false
             end
         end)
+        
         UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 UpdateFromMouse(input.Position.X)
@@ -408,16 +428,22 @@ function UI_Module.CreateMain(hubTitle)
         Page.BackgroundTransparency = 1
         Page.Visible = false
         Page.ScrollBarThickness = 0
+        Page.CanvasSize = UDim2.new(0, 0, 0, 0)
         Page.Name = "Page_"..name
         
         local List = Instance.new("UIListLayout", Page)
         List.Padding = UDim.new(0, 10)
         List.SortOrder = Enum.SortOrder.LayoutOrder
+        List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Page.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y)
+        end)
 
         NewTab.Page = Page
 
         TabBtn.MouseButton1Click:Connect(function()
-            for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
+            for _, p in pairs(PagesFolder:GetChildren()) do 
+                p.Visible = false 
+            end
             for _, b in pairs(Library.TabButtons) do
                 b:SetAttribute("Active", false)
                 TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
