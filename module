@@ -9,10 +9,13 @@ _G.IsDraggingSlider = false
 -- Файл для сохранения темы
 local THEME_FILE = "hysagen_ui_theme.txt"
 
--- Функция загрузки сохраненной темы
+-- Функция загрузки сохраненной темы (Исправлено: добавлена проверка на наличие функций эксплойта)
 local function loadSavedTheme()
+    if not readfile then return nil end -- Защита от вылета в Studio
+    
     local success, result = pcall(function()
-        return HttpService:JSONDecode(readfile(THEME_FILE))
+        local content = readfile(THEME_FILE)
+        return HttpService:JSONDecode(content)
     end)
     
     if success and result and result.theme then
@@ -21,8 +24,10 @@ local function loadSavedTheme()
     return nil
 end
 
--- Функция сохранения темы
+-- Функция сохранения темы (Исправлено: добавлена проверка на наличие функций эксплойта)
 local function saveTheme(themeName)
+    if not writefile then return false end -- Защита от вылета
+    
     local settings = {
         theme = themeName,
         savedAt = DateTime.now():ToIsoDate()
@@ -136,6 +141,7 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.Name = "moduledGui"
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
+    
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 630, 0, 430)
@@ -147,34 +153,29 @@ function UI_Module.CreateMain(hubTitle)
     MainStroke.Thickness = 2
     MainStroke.Color = CurrentTheme.Stroke
 
-    -- ===== КНОПКА ЗАКРЫТИЯ (уменьшенная и в другом месте) =====
+    -- Кнопка закрытия
     local CloseButton = Instance.new("TextButton", Main)
     CloseButton.Name = "CloseButton"
     CloseButton.Size = UDim2.new(0, 15, 0, 15)
-    CloseButton.Position = UDim2.new(1, -28, 0, 2)  -- Сдвинул левее
+    CloseButton.Position = UDim2.new(1, -28, 0, 2)
     CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    CloseButton.Text = "×"  -- Символ умножения как крестик
+    CloseButton.Text = "×"
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     CloseButton.Font = Enum.Font.GothamBold
     CloseButton.TextSize = 16
     CloseButton.AutoButtonColor = false
     CloseButton.ZIndex = 10
-    Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 4)  -- Меньше скругление
+    Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 4)
 
-    -- Hover эффект
     CloseButton.MouseEnter:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 100, 100)}):Play()
     end)
-
     CloseButton.MouseLeave:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)}):Play()
     end)
-
-    -- Закрытие при нажатии
     CloseButton.MouseButton1Click:Connect(function()
         ScreenGui.Enabled = false
     end)
-    -- ============================
     
     MakeDraggable(Main)
 
@@ -243,7 +244,6 @@ function UI_Module.CreateMain(hubTitle)
             end
         end
         
-        -- Сохраняем выбранную тему
         if themeName then
             saveTheme(themeName)
         end
@@ -262,7 +262,6 @@ function UI_Module.CreateMain(hubTitle)
         L.LayoutOrder = self.Count
     end
     
-    -- AddToggleWithBind функция (оставляем как есть)
     function TabBase:AddToggleWithBind(text, defaultState, defaultKey, callback)
         self.Count = self.Count + 1
         local Toggled = defaultState or false
@@ -353,19 +352,13 @@ function UI_Module.CreateMain(hubTitle)
             ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
         end
     
-        ToggleBtn.MouseButton1Click:Connect(function()
-            SetToggle(not Toggled)
-        end)
-    
-        ToggleBindBtn.MouseButton1Click:Connect(function()
-            SetBindEnabled(not BindEnabled)
-        end)
+        ToggleBtn.MouseButton1Click:Connect(function() SetToggle(not Toggled) end)
+        ToggleBindBtn.MouseButton1Click:Connect(function() SetBindEnabled(not BindEnabled) end)
     
         BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
             BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-            
             local connection
             connection = UserInputService.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -376,7 +369,6 @@ function UI_Module.CreateMain(hubTitle)
                     connection:Disconnect()
                 end
             end)
-            
             task.wait(5)
             if Binding then
                 Binding = false
@@ -386,25 +378,15 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        local bindConnection
-        bindConnection = UserInputService.InputBegan:Connect(function(input)
+        local bindConnection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-            if Binding then return end
-            if not BindEnabled then return end
-            if UserInputService:GetFocusedTextBox() then return end
-            if input.KeyCode == CurrentKey then
-                SetToggle(not Toggled)
-            end
+            if Binding or not BindEnabled or UserInputService:GetFocusedTextBox() then return end
+            if input.KeyCode == CurrentKey then SetToggle(not Toggled) end
         end)
         
-        Row.AncestryChanged:Connect(function()
-            if bindConnection then
-                bindConnection:Disconnect()
-            end
-        end)
+        Row.AncestryChanged:Connect(function() if bindConnection then bindConnection:Disconnect() end end)
     end
     
-    -- AddBind функция (оставляем как есть)
     function TabBase:AddBind(text, defaultKey, callback)
         self.Count = self.Count + 1
         local Binding = false
@@ -451,21 +433,16 @@ function UI_Module.CreateMain(hubTitle)
         BindBtn.TextSize = 16
         Instance.new("UICorner", BindBtn)
 
-        local function SetBindEnabled(state)
-            BindEnabled = state
+        ToggleBindBtn.MouseButton1Click:Connect(function()
+            BindEnabled = not BindEnabled
             ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
             ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
-        end
-
-        ToggleBindBtn.MouseButton1Click:Connect(function()
-            SetBindEnabled(not BindEnabled)
         end)
 
         BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
             BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-            
             local connection
             connection = UserInputService.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -476,7 +453,6 @@ function UI_Module.CreateMain(hubTitle)
                     connection:Disconnect()
                 end
             end)
-            
             task.wait(5)
             if Binding then
                 Binding = false
@@ -486,22 +462,13 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        local bindConnection
-        bindConnection = UserInputService.InputBegan:Connect(function(input)
+        local bindConnection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-            if Binding then return end
-            if not BindEnabled then return end
-            if UserInputService:GetFocusedTextBox() then return end
-            if input.KeyCode == CurrentKey then
-                callback()
-            end
+            if Binding or not BindEnabled or UserInputService:GetFocusedTextBox() then return end
+            if input.KeyCode == CurrentKey then callback() end
         end)
         
-        Row.AncestryChanged:Connect(function()
-            if bindConnection then
-                bindConnection:Disconnect()
-            end
-        end)
+        Row.AncestryChanged:Connect(function() if bindConnection then bindConnection:Disconnect() end end)
     end
 
     function TabBase:AddButtonRow(text, btnText, callback)
@@ -622,7 +589,6 @@ function UI_Module.CreateMain(hubTitle)
     function TabBase:AddToggleButton(text, default, callback)
         self.Count = self.Count + 1
         local Toggled = default or false
-        
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
         Row.Size = UDim2.new(1, -10, 0, 55)
@@ -671,7 +637,6 @@ function UI_Module.CreateMain(hubTitle)
             Toggled = not Toggled
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
             local targetText = Toggled and "ON" or "OFF"
-            
             TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
             TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
             StatusLabel.Text = targetText
@@ -712,9 +677,7 @@ function UI_Module.CreateMain(hubTitle)
         NewTab.Page = Page
 
         TabBtn.MouseButton1Click:Connect(function()
-            for _, p in pairs(PagesFolder:GetChildren()) do 
-                p.Visible = false 
-            end
+            for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
             for _, b in pairs(Library.TabButtons) do
                 b:SetAttribute("Active", false)
                 TweenService:Create(b, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Secondary, TextColor3 = CurrentTheme.Text}):Play()
@@ -735,9 +698,7 @@ function UI_Module.CreateMain(hubTitle)
 
     local Settings = Library:CreateTab("Settings", true)
     for name, data in pairs(Themes) do
-        Settings:AddButtonRow(name, "Set", function() 
-            ApplyTheme(data, name) 
-        end)
+        Settings:AddButtonRow(name, "Set", function() ApplyTheme(data, name) end)
     end
 
     return Library
