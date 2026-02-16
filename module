@@ -236,6 +236,7 @@ function UI_Module.CreateMain(hubTitle)
         self.Count = self.Count + 1
         local Toggled = defaultState or false
         local Binding = false
+        local BindEnabled = true -- По умолчанию бинд включен
         local CurrentKey = defaultKey or Enum.KeyCode.E
         
         local Row = Instance.new("Frame", self.Page)
@@ -245,8 +246,9 @@ function UI_Module.CreateMain(hubTitle)
         Row.LayoutOrder = self.Count
         Instance.new("UICorner", Row)
         
+        -- Лейбл
         local L = Instance.new("TextLabel", Row)
-        L.Size = UDim2.new(0.4, 0, 1, 0)
+        L.Size = UDim2.new(0.35, 0, 1, 0)
         L.Position = UDim2.new(0, 15, 0, 0)
         L.Text = text
         L.TextColor3 = CurrentTheme.Text
@@ -255,11 +257,11 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
     
-        -- Toggle кнопка
+        -- Toggle кнопка (ON/OFF)
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtnFrame"
-        ToggleBtn.Size = UDim2.new(0.25, 0, 0, 38)
-        ToggleBtn.Position = UDim2.new(0.45, 0, 0.5, -19)
+        ToggleBtn.Size = UDim2.new(0.2, 0, 0, 38)
+        ToggleBtn.Position = UDim2.new(0.4, 0, 0.5, -19)
         ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
         ToggleBtn.Text = ""
         ToggleBtn.AutoButtonColor = false
@@ -283,11 +285,24 @@ function UI_Module.CreateMain(hubTitle)
         StatusLabel.TextSize = 14
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-        -- Бинд кнопка
+        -- Кнопка включения/отключения бинда
+        local ToggleBindBtn = Instance.new("TextButton", Row)
+        ToggleBindBtn.Name = "ToggleBindBtn"
+        ToggleBindBtn.Size = UDim2.new(0.15, 0, 0, 38)
+        ToggleBindBtn.Position = UDim2.new(0.62, 0, 0.5, -19)
+        ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
+        ToggleBindBtn.TextColor3 = CurrentTheme.BtnText
+        ToggleBindBtn.Font = Enum.Font.GothamBold
+        ToggleBindBtn.TextSize = 14
+        ToggleBindBtn.AutoButtonColor = false
+        Instance.new("UICorner", ToggleBindBtn).CornerRadius = UDim.new(0, 8)
+    
+        -- Бинд кнопка (для изменения клавиши)
         local BindBtn = Instance.new("TextButton", Row)
         BindBtn.Name = "ActionBtn"
-        BindBtn.Size = UDim2.new(0.2, 0, 0, 38)
-        BindBtn.Position = UDim2.new(0.75, 0, 0.5, -19)
+        BindBtn.Size = UDim2.new(0.15, 0, 0, 38)
+        BindBtn.Position = UDim2.new(0.79, 0, 0.5, -19)
         BindBtn.BackgroundColor3 = CurrentTheme.Accent
         BindBtn.Text = CurrentKey.Name
         BindBtn.TextColor3 = CurrentTheme.BtnText
@@ -295,7 +310,7 @@ function UI_Module.CreateMain(hubTitle)
         BindBtn.TextSize = 16
         Instance.new("UICorner", BindBtn)
     
-        -- Функция обновления состояния
+        -- Функция обновления состояния функции
         local function SetToggle(state)
             Toggled = state
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
@@ -306,9 +321,21 @@ function UI_Module.CreateMain(hubTitle)
             callback(Toggled)
         end
     
+        -- Функция обновления состояния бинда
+        local function SetBindEnabled(state)
+            BindEnabled = state
+            ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+            ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
+        end
+    
         -- Клик по toggle кнопке
         ToggleBtn.MouseButton1Click:Connect(function()
             SetToggle(not Toggled)
+        end)
+    
+        -- Клик по кнопке включения/отключения бинда
+        ToggleBindBtn.MouseButton1Click:Connect(function()
+            SetBindEnabled(not BindEnabled)
         end)
     
         -- Настройка бинда (изменение клавиши)
@@ -337,23 +364,27 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        -- СОЗДАЕМ ОТДЕЛЬНОЕ СОЕДИНЕНИЕ ДЛЯ БИНДА
-        -- Используем корутину для обработки нажатий
-        local bindThread
-        bindThread = UserInputService.InputBegan:Connect(function(input)
-            -- Проверяем что这不是 процесс ввода в чат и т.д.
+        -- Обработка нажатия бинда
+        local bindConnection
+        bindConnection = UserInputService.InputBegan:Connect(function(input)
+            -- Проверяем что это клавиша
+            if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+            -- Проверяем что не в режиме биндинга
+            if Binding then return end
+            -- Проверяем что бинд включен
+            if not BindEnabled then return end
+            -- Проверяем что не печатаем в чате
             if UserInputService:GetFocusedTextBox() then return end
-            
-            -- Проверяем что нажата нужная клавиша и не в режиме биндинга
-            if not Binding and input.KeyCode == CurrentKey and input.UserInputState == Enum.UserInputState.Begin then
+            -- Проверяем что нажата нужная клавиша
+            if input.KeyCode == CurrentKey then
                 SetToggle(not Toggled)
             end
         end)
         
         -- Автоматически отключаем соединение при уничтожении ряда
         Row.AncestryChanged:Connect(function()
-            if bindThread then
-                bindThread:Disconnect()
+            if bindConnection then
+                bindConnection:Disconnect()
             end
         end)
     end
