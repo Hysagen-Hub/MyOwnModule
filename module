@@ -232,6 +232,182 @@ function UI_Module.CreateMain(hubTitle)
         L.TextXAlignment = Enum.TextXAlignment.Left
         L.LayoutOrder = self.Count
     end
+    function TabBase:AddToggleWithBind(text, defaultState, defaultKey, callback)
+        self.Count = self.Count + 1
+        local Toggled = defaultState or false
+        local Binding = false
+        local CurrentKey = defaultKey or Enum.KeyCode.E
+        
+        local Row = Instance.new("Frame", self.Page)
+        Row.Name = "Row"
+        Row.Size = UDim2.new(1, -10, 0, 55)
+        Row.BackgroundColor3 = CurrentTheme.Secondary
+        Row.LayoutOrder = self.Count
+        Instance.new("UICorner", Row)
+        
+        local L = Instance.new("TextLabel", Row)
+        L.Size = UDim2.new(0.4, 0, 1, 0)
+        L.Position = UDim2.new(0, 15, 0, 0)
+        L.Text = text
+        L.TextColor3 = CurrentTheme.Text
+        L.Font = Enum.Font.GothamMedium
+        L.TextSize = 16
+        L.BackgroundTransparency = 1
+        L.TextXAlignment = Enum.TextXAlignment.Left
+    
+        -- Toggle кнопка
+        local ToggleBtn = Instance.new("TextButton", Row)
+        ToggleBtn.Name = "ToggleBtnFrame"
+        ToggleBtn.Size = UDim2.new(0.25, 0, 0, 38)
+        ToggleBtn.Position = UDim2.new(0.45, 0, 0.5, -19)
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+        ToggleBtn.Text = ""
+        ToggleBtn.AutoButtonColor = false
+        Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+    
+        local Dot = Instance.new("Frame", ToggleBtn)
+        Dot.Name = "StatusDot"
+        Dot.Size = UDim2.new(0, 8, 0, 8)
+        Dot.Position = UDim2.new(0, 10, 0.5, -4)
+        Dot.BackgroundColor3 = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        Dot.BorderSizePixel = 0
+        Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
+    
+        local StatusLabel = Instance.new("TextLabel", ToggleBtn)
+        StatusLabel.Size = UDim2.new(1, -25, 1, 0)
+        StatusLabel.Position = UDim2.new(0, 22, 0, 0)
+        StatusLabel.BackgroundTransparency = 1
+        StatusLabel.Text = Toggled and "ON" or "OFF"
+        StatusLabel.TextColor3 = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        StatusLabel.Font = Enum.Font.GothamBold
+        StatusLabel.TextSize = 14
+        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+        -- Бинд кнопка
+        local BindBtn = Instance.new("TextButton", Row)
+        BindBtn.Name = "ActionBtn"
+        BindBtn.Size = UDim2.new(0.2, 0, 0, 38)
+        BindBtn.Position = UDim2.new(0.75, 0, 0.5, -19)
+        BindBtn.BackgroundColor3 = CurrentTheme.Accent
+        BindBtn.Text = CurrentKey.Name
+        BindBtn.TextColor3 = CurrentTheme.BtnText
+        BindBtn.Font = Enum.Font.GothamBold
+        BindBtn.TextSize = 16
+        Instance.new("UICorner", BindBtn)
+    
+        -- Логика toggle
+        local function SetToggle(state)
+            Toggled = state
+            local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+            local targetText = Toggled and "ON" or "OFF"
+            TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
+            TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
+            StatusLabel.Text = targetText
+            callback(Toggled)
+        end
+    
+        ToggleBtn.MouseButton1Click:Connect(function()
+            SetToggle(not Toggled)
+        end)
+    
+        -- Логика бинда
+        BindBtn.MouseButton1Click:Connect(function()
+            Binding = true
+            BindBtn.Text = "..."
+            BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+            
+            local connection
+            connection = UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    Binding = false
+                    CurrentKey = input.KeyCode
+                    BindBtn.Text = CurrentKey.Name
+                    BindBtn.BackgroundColor3 = CurrentTheme.Accent
+                    connection:Disconnect()
+                end
+            end)
+            
+            task.wait(5)
+            if Binding then
+                Binding = false
+                BindBtn.Text = CurrentKey.Name
+                BindBtn.BackgroundColor3 = CurrentTheme.Accent
+                if connection then connection:Disconnect() end
+            end
+        end)
+        
+        -- Обработка нажатия бинда
+        UserInputService.InputBegan:Connect(function(input)
+            if not Binding and input.KeyCode == CurrentKey and not input.UserInputState == Enum.UserInputState.Cancel then
+                SetToggle(not Toggled)
+            end
+        end)
+    end
+    function TabBase:AddBind(text, defaultKey, callback)
+        self.Count = self.Count + 1
+        local Binding = false
+        local CurrentKey = defaultKey or Enum.KeyCode.E
+        
+        local Row = Instance.new("Frame", self.Page)
+        Row.Name = "Row"
+        Row.Size = UDim2.new(1, -10, 0, 55)
+        Row.BackgroundColor3 = CurrentTheme.Secondary
+        Row.LayoutOrder = self.Count
+        Instance.new("UICorner", Row)
+        
+        local L = Instance.new("TextLabel", Row)
+        L.Size = UDim2.new(0.5, 0, 1, 0)
+        L.Position = UDim2.new(0, 15, 0, 0)
+        L.Text = text
+        L.TextColor3 = CurrentTheme.Text
+        L.Font = Enum.Font.GothamMedium
+        L.TextSize = 16
+        L.BackgroundTransparency = 1
+        L.TextXAlignment = Enum.TextXAlignment.Left
+    
+        local BindBtn = Instance.new("TextButton", Row)
+        BindBtn.Name = "ActionBtn"
+        BindBtn.Size = UDim2.new(0.3, 0, 0, 38)
+        BindBtn.Position = UDim2.new(0.65, 0, 0.5, -19)
+        BindBtn.BackgroundColor3 = CurrentTheme.Accent
+        BindBtn.Text = CurrentKey.Name
+        BindBtn.TextColor3 = CurrentTheme.BtnText
+        BindBtn.Font = Enum.Font.GothamBold
+        BindBtn.TextSize = 16
+        Instance.new("UICorner", BindBtn)
+    
+        BindBtn.MouseButton1Click:Connect(function()
+            Binding = true
+            BindBtn.Text = "..."
+            BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+            
+            local connection
+            connection = UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    Binding = false
+                    CurrentKey = input.KeyCode
+                    BindBtn.Text = CurrentKey.Name
+                    BindBtn.BackgroundColor3 = CurrentTheme.Accent
+                    connection:Disconnect()
+                end
+            end)
+            
+            task.wait(5)
+            if Binding then
+                Binding = false
+                BindBtn.Text = CurrentKey.Name
+                BindBtn.BackgroundColor3 = CurrentTheme.Accent
+                if connection then connection:Disconnect() end
+            end
+        end)
+        
+        -- Обработка нажатия бинда
+        UserInputService.InputBegan:Connect(function(input)
+            if not Binding and input.KeyCode == CurrentKey and not input.UserInputState == Enum.UserInputState.Cancel then
+                callback()
+            end
+        end)
+    end
 
     function TabBase:AddButtonRow(text, btnText, callback)
         self.Count = self.Count + 1
