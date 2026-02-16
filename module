@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
 _G.IsDraggingSlider = false
+_G.IsBindingKey = false -- Флаг для отслеживания режима биндинга
 
 -- Файл для сохранения темы
 local THEME_FILE = "hysagen_ui_theme.txt"
@@ -53,7 +54,7 @@ local function MakeDraggable(gui)
     end
     
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider and not _G.IsBindingKey then
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
@@ -74,6 +75,49 @@ local function MakeDraggable(gui)
             end
         end
     end)
+end
+
+-- Функция для получения названия клавиши
+local function GetKeyName(keyCode)
+    local keyNames = {
+        [Enum.KeyCode.LeftShift] = "LShift",
+        [Enum.KeyCode.RightShift] = "RShift",
+        [Enum.KeyCode.LeftControl] = "LCtrl",
+        [Enum.KeyCode.RightControl] = "RCtrl",
+        [Enum.KeyCode.LeftAlt] = "LAlt",
+        [Enum.KeyCode.RightAlt] = "RAlt",
+        [Enum.KeyCode.CapsLock] = "Caps",
+        [Enum.KeyCode.PageUp] = "PgUp",
+        [Enum.KeyCode.PageDown] = "PgDn",
+        [Enum.KeyCode.Insert] = "Ins",
+        [Enum.KeyCode.Delete] = "Del",
+        [Enum.KeyCode.Home] = "Home",
+        [Enum.KeyCode.End] = "End",
+        [Enum.KeyCode.Space] = "Space",
+        [Enum.KeyCode.Return] = "Enter",
+        [Enum.KeyCode.Backspace] = "Bksp",
+        [Enum.KeyCode.Tab] = "Tab",
+        [Enum.KeyCode.Escape] = "Esc",
+        [Enum.KeyCode.Minus] = "-",
+        [Enum.KeyCode.Equals] = "=",
+        [Enum.KeyCode.LeftBracket] = "[",
+        [Enum.KeyCode.RightBracket] = "]",
+        [Enum.KeyCode.Semicolon] = ";",
+        [Enum.KeyCode.Quote] = "'",
+        [Enum.KeyCode.Comma] = ",",
+        [Enum.KeyCode.Period] = ".",
+        [Enum.KeyCode.Slash] = "/",
+        [Enum.KeyCode.BackSlash] = "\\",
+        [Enum.KeyCode.Grave] = "`",
+    }
+    
+    -- Для букв и цифр используем стандартное имя
+    local keyName = keyNames[keyCode]
+    if not keyName then
+        keyName = keyCode.Name:gsub("KeyCode%.", "")
+    end
+    
+    return keyName
 end
 
 function UI_Module.CreateMain(hubTitle)
@@ -187,7 +231,7 @@ function UI_Module.CreateMain(hubTitle)
             elseif obj.Name == "Sidebar" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
             elseif obj:IsA("UIStroke") then TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
             elseif obj.Name == "Row" or obj.Name == "SliderBack" then TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
-            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" or obj.Name == "SliderKnob" then 
+            elseif obj.Name == "ActionBtn" or obj.Name == "SliderFill" or obj.Name == "SliderKnob" or obj.Name == "KeyBindBtn" then 
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Accent}):Play()
                 if obj:IsA("TextButton") then TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play() end
             elseif obj:IsA("TextLabel") then TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
@@ -331,6 +375,8 @@ function UI_Module.CreateMain(hubTitle)
     function TabBase:AddToggleButton(text, default, callback)
         self.Count = self.Count + 1
         local Toggled = default or false
+        local BoundKey = nil -- Клавиша для бинда
+        local IsWaitingForKey = false
         
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
@@ -340,7 +386,7 @@ function UI_Module.CreateMain(hubTitle)
         Instance.new("UICorner", Row)
         
         local L = Instance.new("TextLabel", Row)
-        L.Size = UDim2.new(0.6, 0, 1, 0)
+        L.Size = UDim2.new(0.4, 0, 1, 0)
         L.Position = UDim2.new(0, 15, 0, 0)
         L.Text = text
         L.TextColor3 = CurrentTheme.Text
@@ -349,10 +395,23 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
+        -- Кнопка для бинда (справа от свитчера)
+        local KeyBindBtn = Instance.new("TextButton", Row)
+        KeyBindBtn.Name = "KeyBindBtn"
+        KeyBindBtn.Size = UDim2.new(0.15, 0, 0, 30)
+        KeyBindBtn.Position = UDim2.new(0.65, 0, 0.5, -15)
+        KeyBindBtn.BackgroundColor3 = CurrentTheme.Accent
+        KeyBindBtn.Text = "None"
+        KeyBindBtn.TextColor3 = CurrentTheme.BtnText
+        KeyBindBtn.Font = Enum.Font.GothamBold
+        KeyBindBtn.TextSize = 14
+        Instance.new("UICorner", KeyBindBtn).CornerRadius = UDim.new(0, 6)
+
+        -- Свитчер (переключатель)
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtnFrame"
-        ToggleBtn.Size = UDim2.new(0.3, 0, 0, 38)
-        ToggleBtn.Position = UDim2.new(0.65, 0, 0.5, -19)
+        ToggleBtn.Size = UDim2.new(0.15, 0, 0, 38)
+        ToggleBtn.Position = UDim2.new(0.82, 0, 0.5, -19)
         ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) 
         ToggleBtn.Text = "" 
         ToggleBtn.AutoButtonColor = false
@@ -376,15 +435,71 @@ function UI_Module.CreateMain(hubTitle)
         StatusLabel.TextSize = 14
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-        ToggleBtn.MouseButton1Click:Connect(function()
-            Toggled = not Toggled
-            local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-            local targetText = Toggled and "ON" or "OFF"
+        -- Функция для обработки нажатия клавиши
+        local function onKeyPress(input)
+            if IsWaitingForKey and input.UserInputType == Enum.UserInputType.Keyboard then
+                IsWaitingForKey = false
+                _G.IsBindingKey = false
+                
+                if input.KeyCode == Enum.KeyCode.Escape then
+                    BoundKey = nil
+                    KeyBindBtn.Text = "None"
+                else
+                    BoundKey = input.KeyCode
+                    KeyBindBtn.Text = GetKeyName(input.KeyCode)
+                end
+                
+                KeyBindBtn.BackgroundColor3 = CurrentTheme.Accent
+            end
+        end
+
+        -- Подключаем обработчик нажатий
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input)
+            onKeyPress(input)
             
-            TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
-            TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
-            StatusLabel.Text = targetText
-            callback(Toggled)
+            -- Если есть забинженная клавиша и не в режиме ожидания, переключаем состояние
+            if BoundKey and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == BoundKey and not IsWaitingForKey and not _G.IsBindingKey then
+                Toggled = not Toggled
+                local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+                local targetText = Toggled and "ON" or "OFF"
+                
+                TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
+                TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
+                StatusLabel.Text = targetText
+                callback(Toggled)
+            end
+        end)
+
+        -- Клик по свитчеру (меняет состояние)
+        ToggleBtn.MouseButton1Click:Connect(function()
+            if not IsWaitingForKey then
+                Toggled = not Toggled
+                local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+                local targetText = Toggled and "ON" or "OFF"
+                
+                TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
+                TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
+                StatusLabel.Text = targetText
+                callback(Toggled)
+            end
+        end)
+
+        -- Клик по кнопке бинда (вход в режим ожидания)
+        KeyBindBtn.MouseButton1Click:Connect(function()
+            if not IsWaitingForKey then
+                IsWaitingForKey = true
+                _G.IsBindingKey = true
+                KeyBindBtn.Text = "..."
+                KeyBindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+            end
+        end)
+
+        -- Очистка при уничтожении
+        Row.Destroying:Connect(function()
+            if connection then
+                connection:Disconnect()
+            end
         end)
     end
 
