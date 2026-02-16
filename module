@@ -146,6 +146,35 @@ function UI_Module.CreateMain(hubTitle)
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 2
     MainStroke.Color = CurrentTheme.Stroke
+
+    -- ===== КНОПКА ЗАКРЫТИЯ =====
+    local CloseButton = Instance.new("TextButton", Main)
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.TextSize = 18
+    CloseButton.AutoButtonColor = false
+    CloseButton.ZIndex = 10
+    Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 8)
+
+    -- Hover эффект
+    CloseButton.MouseEnter:Connect(function()
+        TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 100, 100)}):Play()
+    end)
+
+    CloseButton.MouseLeave:Connect(function()
+        TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)}):Play()
+    end)
+
+    -- Закрытие при нажатии
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui.Enabled = false
+    end)
+    -- ============================
     
     MakeDraggable(Main)
 
@@ -192,7 +221,7 @@ function UI_Module.CreateMain(hubTitle)
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
             elseif obj.Name == "Sidebar" then 
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
-            elseif obj:IsA("UIStroke") and obj.Parent.Name ~= "SliderKnob" then 
+            elseif obj:IsA("UIStroke") and obj.Parent.Name ~= "SliderKnob" and obj.Parent.Name ~= "CloseButton" then 
                 TweenService:Create(obj, tInfo, {Color = theme.Stroke}):Play()
             elseif obj.Name == "Row" or obj.Name == "SliderBack" then 
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Secondary}):Play()
@@ -201,7 +230,7 @@ function UI_Module.CreateMain(hubTitle)
                 if obj:IsA("TextButton") then 
                     TweenService:Create(obj, tInfo, {TextColor3 = theme.BtnText}):Play()
                 end
-            elseif obj:IsA("TextLabel") and obj.Parent.Name ~= "SliderKnob" then 
+            elseif obj:IsA("TextLabel") and obj.Parent.Name ~= "SliderKnob" and obj.Name ~= "CloseButton" then 
                 TweenService:Create(obj, tInfo, {TextColor3 = theme.Text}):Play()
             end
         end
@@ -232,11 +261,13 @@ function UI_Module.CreateMain(hubTitle)
         L.TextXAlignment = Enum.TextXAlignment.Left
         L.LayoutOrder = self.Count
     end
+    
+    -- AddToggleWithBind функция (оставляем как есть)
     function TabBase:AddToggleWithBind(text, defaultState, defaultKey, callback)
         self.Count = self.Count + 1
         local Toggled = defaultState or false
         local Binding = false
-        local BindEnabled = true -- По умолчанию бинд включен
+        local BindEnabled = true
         local CurrentKey = defaultKey or Enum.KeyCode.E
         
         local Row = Instance.new("Frame", self.Page)
@@ -246,7 +277,6 @@ function UI_Module.CreateMain(hubTitle)
         Row.LayoutOrder = self.Count
         Instance.new("UICorner", Row)
         
-        -- Лейбл
         local L = Instance.new("TextLabel", Row)
         L.Size = UDim2.new(0.35, 0, 1, 0)
         L.Position = UDim2.new(0, 15, 0, 0)
@@ -257,7 +287,6 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
     
-        -- Toggle кнопка (ON/OFF)
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtnFrame"
         ToggleBtn.Size = UDim2.new(0.2, 0, 0, 38)
@@ -285,7 +314,6 @@ function UI_Module.CreateMain(hubTitle)
         StatusLabel.TextSize = 14
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-        -- Кнопка включения/отключения бинда
         local ToggleBindBtn = Instance.new("TextButton", Row)
         ToggleBindBtn.Name = "ToggleBindBtn"
         ToggleBindBtn.Size = UDim2.new(0.15, 0, 0, 38)
@@ -298,7 +326,6 @@ function UI_Module.CreateMain(hubTitle)
         ToggleBindBtn.AutoButtonColor = false
         Instance.new("UICorner", ToggleBindBtn).CornerRadius = UDim.new(0, 8)
     
-        -- Бинд кнопка (для изменения клавиши)
         local BindBtn = Instance.new("TextButton", Row)
         BindBtn.Name = "ActionBtn"
         BindBtn.Size = UDim2.new(0.15, 0, 0, 38)
@@ -310,7 +337,6 @@ function UI_Module.CreateMain(hubTitle)
         BindBtn.TextSize = 16
         Instance.new("UICorner", BindBtn)
     
-        -- Функция обновления состояния функции
         local function SetToggle(state)
             Toggled = state
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
@@ -321,24 +347,20 @@ function UI_Module.CreateMain(hubTitle)
             callback(Toggled)
         end
     
-        -- Функция обновления состояния бинда
         local function SetBindEnabled(state)
             BindEnabled = state
             ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
             ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
         end
     
-        -- Клик по toggle кнопке
         ToggleBtn.MouseButton1Click:Connect(function()
             SetToggle(not Toggled)
         end)
     
-        -- Клик по кнопке включения/отключения бинда
         ToggleBindBtn.MouseButton1Click:Connect(function()
             SetBindEnabled(not BindEnabled)
         end)
     
-        -- Настройка бинда (изменение клавиши)
         BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
@@ -364,33 +386,29 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        -- Обработка нажатия бинда
         local bindConnection
         bindConnection = UserInputService.InputBegan:Connect(function(input)
-            -- Проверяем что это клавиша
             if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-            -- Проверяем что не в режиме биндинга
             if Binding then return end
-            -- Проверяем что бинд включен
             if not BindEnabled then return end
-            -- Проверяем что не печатаем в чате
             if UserInputService:GetFocusedTextBox() then return end
-            -- Проверяем что нажата нужная клавиша
             if input.KeyCode == CurrentKey then
                 SetToggle(not Toggled)
             end
         end)
         
-        -- Автоматически отключаем соединение при уничтожении ряда
         Row.AncestryChanged:Connect(function()
             if bindConnection then
                 bindConnection:Disconnect()
             end
         end)
     end
+    
+    -- AddBind функция (оставляем как есть)
     function TabBase:AddBind(text, defaultKey, callback)
         self.Count = self.Count + 1
         local Binding = false
+        local BindEnabled = true
         local CurrentKey = defaultKey or Enum.KeyCode.E
         
         local Row = Instance.new("Frame", self.Page)
@@ -401,7 +419,7 @@ function UI_Module.CreateMain(hubTitle)
         Instance.new("UICorner", Row)
         
         local L = Instance.new("TextLabel", Row)
-        L.Size = UDim2.new(0.5, 0, 1, 0)
+        L.Size = UDim2.new(0.4, 0, 1, 0)
         L.Position = UDim2.new(0, 15, 0, 0)
         L.Text = text
         L.TextColor3 = CurrentTheme.Text
@@ -409,18 +427,40 @@ function UI_Module.CreateMain(hubTitle)
         L.TextSize = 16
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
-    
+
+        local ToggleBindBtn = Instance.new("TextButton", Row)
+        ToggleBindBtn.Name = "ToggleBindBtn"
+        ToggleBindBtn.Size = UDim2.new(0.2, 0, 0, 38)
+        ToggleBindBtn.Position = UDim2.new(0.45, 0, 0.5, -19)
+        ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+        ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
+        ToggleBindBtn.TextColor3 = CurrentTheme.BtnText
+        ToggleBindBtn.Font = Enum.Font.GothamBold
+        ToggleBindBtn.TextSize = 14
+        ToggleBindBtn.AutoButtonColor = false
+        Instance.new("UICorner", ToggleBindBtn).CornerRadius = UDim.new(0, 8)
+
         local BindBtn = Instance.new("TextButton", Row)
         BindBtn.Name = "ActionBtn"
-        BindBtn.Size = UDim2.new(0.3, 0, 0, 38)
-        BindBtn.Position = UDim2.new(0.65, 0, 0.5, -19)
+        BindBtn.Size = UDim2.new(0.2, 0, 0, 38)
+        BindBtn.Position = UDim2.new(0.7, 0, 0.5, -19)
         BindBtn.BackgroundColor3 = CurrentTheme.Accent
         BindBtn.Text = CurrentKey.Name
         BindBtn.TextColor3 = CurrentTheme.BtnText
         BindBtn.Font = Enum.Font.GothamBold
         BindBtn.TextSize = 16
         Instance.new("UICorner", BindBtn)
-    
+
+        local function SetBindEnabled(state)
+            BindEnabled = state
+            ToggleBindBtn.BackgroundColor3 = BindEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+            ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
+        end
+
+        ToggleBindBtn.MouseButton1Click:Connect(function()
+            SetBindEnabled(not BindEnabled)
+        end)
+
         BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
@@ -446,10 +486,20 @@ function UI_Module.CreateMain(hubTitle)
             end
         end)
         
-        -- Обработка нажатия бинда
-        UserInputService.InputBegan:Connect(function(input)
-            if not Binding and input.KeyCode == CurrentKey and not input.UserInputState == Enum.UserInputState.Cancel then
+        local bindConnection
+        bindConnection = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+            if Binding then return end
+            if not BindEnabled then return end
+            if UserInputService:GetFocusedTextBox() then return end
+            if input.KeyCode == CurrentKey then
                 callback()
+            end
+        end)
+        
+        Row.AncestryChanged:Connect(function()
+            if bindConnection then
+                bindConnection:Disconnect()
             end
         end)
     end
