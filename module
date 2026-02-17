@@ -52,7 +52,7 @@ local function MakeDraggable(gui)
         )
     end
     
-    gui.InputBegan:Connect(function(input)
+    local inputBeganConn = gui.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and not _G.IsDraggingSlider then
             dragging = true
             dragStart = input.Position
@@ -60,13 +60,13 @@ local function MakeDraggable(gui)
         end
     end)
     
-    gui.InputEnded:Connect(function(input)
+    local inputEndedConn = gui.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
     
-    UserInputService.InputChanged:Connect(function(input)
+    local inputChangedConn = UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
             if dragging and not _G.IsDraggingSlider then
@@ -74,10 +74,17 @@ local function MakeDraggable(gui)
             end
         end
     end)
+    
+    -- Возвращаем соединения для возможной очистки
+    return {
+        inputBeganConn,
+        inputEndedConn,
+        inputChangedConn
+    }
 end
 
 function UI_Module.CreateMain(hubTitle)
-    local Library = { TabButtons = {} }
+    local Library = { TabButtons = {}, Connections = {} }
     local TabBase = {}
     TabBase.__index = TabBase
     
@@ -136,6 +143,7 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.Name = "moduledGui"
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
+    
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 630, 0, 430)
@@ -147,11 +155,17 @@ function UI_Module.CreateMain(hubTitle)
     MainStroke.Thickness = 2
     MainStroke.Color = CurrentTheme.Stroke
 
+    -- Делаем окно перетаскиваемым и сохраняем соединения
+    local dragConnections = MakeDraggable(Main)
+    for _, conn in ipairs(dragConnections) do
+        table.insert(Library.Connections, conn)
+    end
+
     -- ===== КНОПКА ЗАКРЫТИЯ =====
     local CloseButton = Instance.new("TextButton", Main)
     CloseButton.Name = "CloseButton"
     CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Position = UDim2.new(1, -0, 0, 0)
+    CloseButton.Position = UDim2.new(1, 0, 0, 0)
     CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     CloseButton.Text = "X"
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -162,21 +176,33 @@ function UI_Module.CreateMain(hubTitle)
     Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 8)
 
     -- Hover эффект
-    CloseButton.MouseEnter:Connect(function()
+    local closeMouseEnterConn = CloseButton.MouseEnter:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 100, 100)}):Play()
     end)
+    table.insert(Library.Connections, closeMouseEnterConn)
 
-    CloseButton.MouseLeave:Connect(function()
+    local closeMouseLeaveConn = CloseButton.MouseLeave:Connect(function()
         TweenService:Create(CloseButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)}):Play()
     end)
+    table.insert(Library.Connections, closeMouseLeaveConn)
 
-    -- Закрытие при нажатии
-    CloseButton.MouseButton1Click:Connect(function()
-        ScreenGui.Enabled = false
+    -- Функция очистки всех соединений
+    local function CleanupAllConnections()
+        for _, conn in ipairs(Library.Connections) do
+            if conn and conn.Disconnect then
+                conn:Disconnect()
+            end
+        end
+        Library.Connections = {}
+    end
+
+    -- Закрытие при нажатии с полной очисткой
+    local closeClickConn = CloseButton.MouseButton1Click:Connect(function()
+        CleanupAllConnections()
+        ScreenGui:Destroy() -- Полностью удаляем GUI
     end)
+    table.insert(Library.Connections, closeClickConn)
     -- ============================
-    
-    MakeDraggable(Main)
 
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Name = "Sidebar"
@@ -193,9 +219,11 @@ function UI_Module.CreateMain(hubTitle)
     SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     local listLayout = Instance.new("UIListLayout", SidebarScroll)
     listLayout.Padding = UDim.new(0, 5)
-    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    
+    local listLayoutConn = listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
     end)
+    table.insert(Library.Connections, listLayoutConn)
 
     local Title = Instance.new("TextLabel", Sidebar)
     Title.Name = "HubTitle"
@@ -262,13 +290,13 @@ function UI_Module.CreateMain(hubTitle)
         L.LayoutOrder = self.Count
     end
     
-    -- AddToggleWithBind функция (оставляем как есть)
     function TabBase:AddToggleWithBind(text, defaultState, defaultKey, callback)
         self.Count = self.Count + 1
         local Toggled = defaultState or false
         local Binding = false
         local BindEnabled = true
         local CurrentKey = defaultKey or Enum.KeyCode.E
+        local Connections = {} -- Локальные соединения для этого элемента
         
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
@@ -344,7 +372,9 @@ function UI_Module.CreateMain(hubTitle)
             TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
             TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
             StatusLabel.Text = targetText
-            callback(Toggled)
+            if callback then
+                callback(Toggled)
+            end
         end
     
         local function SetBindEnabled(state)
@@ -353,15 +383,20 @@ function UI_Module.CreateMain(hubTitle)
             ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
         end
     
-        ToggleBtn.MouseButton1Click:Connect(function()
+        -- Сохраняем все соединения
+        local toggleClickConn = ToggleBtn.MouseButton1Click:Connect(function()
             SetToggle(not Toggled)
         end)
+        table.insert(Connections, toggleClickConn)
+        table.insert(Library.Connections, toggleClickConn)
     
-        ToggleBindBtn.MouseButton1Click:Connect(function()
+        local toggleBindClickConn = ToggleBindBtn.MouseButton1Click:Connect(function()
             SetBindEnabled(not BindEnabled)
         end)
+        table.insert(Connections, toggleBindClickConn)
+        table.insert(Library.Connections, toggleBindClickConn)
     
-        BindBtn.MouseButton1Click:Connect(function()
+        local bindClickConn = BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
             BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
@@ -373,9 +408,11 @@ function UI_Module.CreateMain(hubTitle)
                     CurrentKey = input.KeyCode
                     BindBtn.Text = CurrentKey.Name
                     BindBtn.BackgroundColor3 = CurrentTheme.Accent
-                    connection:Disconnect()
+                    if connection then connection:Disconnect() end
                 end
             end)
+            table.insert(Connections, connection)
+            table.insert(Library.Connections, connection)
             
             task.wait(5)
             if Binding then
@@ -385,9 +422,10 @@ function UI_Module.CreateMain(hubTitle)
                 if connection then connection:Disconnect() end
             end
         end)
+        table.insert(Connections, bindClickConn)
+        table.insert(Library.Connections, bindClickConn)
         
-        local bindConnection
-        bindConnection = UserInputService.InputBegan:Connect(function(input)
+        local bindConnection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
             if Binding then return end
             if not BindEnabled then return end
@@ -396,20 +434,29 @@ function UI_Module.CreateMain(hubTitle)
                 SetToggle(not Toggled)
             end
         end)
+        table.insert(Connections, bindConnection)
+        table.insert(Library.Connections, bindConnection)
         
-        Row.AncestryChanged:Connect(function()
-            if bindConnection then
-                bindConnection:Disconnect()
+        -- Очистка при уничтожении родителя
+        local ancestryConn = Row.AncestryChanged:Connect(function()
+            if not Row.Parent then
+                for _, conn in ipairs(Connections) do
+                    if conn and conn.Disconnect then
+                        conn:Disconnect()
+                    end
+                end
             end
         end)
+        table.insert(Connections, ancestryConn)
+        table.insert(Library.Connections, ancestryConn)
     end
     
-    -- AddBind функция (оставляем как есть)
     function TabBase:AddBind(text, defaultKey, callback)
         self.Count = self.Count + 1
         local Binding = false
         local BindEnabled = true
         local CurrentKey = defaultKey or Enum.KeyCode.E
+        local Connections = {}
         
         local Row = Instance.new("Frame", self.Page)
         Row.Name = "Row"
@@ -457,11 +504,13 @@ function UI_Module.CreateMain(hubTitle)
             ToggleBindBtn.Text = BindEnabled and "ON" or "OFF"
         end
 
-        ToggleBindBtn.MouseButton1Click:Connect(function()
+        local toggleBindClickConn = ToggleBindBtn.MouseButton1Click:Connect(function()
             SetBindEnabled(not BindEnabled)
         end)
+        table.insert(Connections, toggleBindClickConn)
+        table.insert(Library.Connections, toggleBindClickConn)
 
-        BindBtn.MouseButton1Click:Connect(function()
+        local bindClickConn = BindBtn.MouseButton1Click:Connect(function()
             Binding = true
             BindBtn.Text = "..."
             BindBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
@@ -473,9 +522,11 @@ function UI_Module.CreateMain(hubTitle)
                     CurrentKey = input.KeyCode
                     BindBtn.Text = CurrentKey.Name
                     BindBtn.BackgroundColor3 = CurrentTheme.Accent
-                    connection:Disconnect()
+                    if connection then connection:Disconnect() end
                 end
             end)
+            table.insert(Connections, connection)
+            table.insert(Library.Connections, connection)
             
             task.wait(5)
             if Binding then
@@ -485,23 +536,32 @@ function UI_Module.CreateMain(hubTitle)
                 if connection then connection:Disconnect() end
             end
         end)
+        table.insert(Connections, bindClickConn)
+        table.insert(Library.Connections, bindClickConn)
         
-        local bindConnection
-        bindConnection = UserInputService.InputBegan:Connect(function(input)
+        local bindConnection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
             if Binding then return end
             if not BindEnabled then return end
             if UserInputService:GetFocusedTextBox() then return end
             if input.KeyCode == CurrentKey then
-                callback()
+                if callback then callback() end
             end
         end)
+        table.insert(Connections, bindConnection)
+        table.insert(Library.Connections, bindConnection)
         
-        Row.AncestryChanged:Connect(function()
-            if bindConnection then
-                bindConnection:Disconnect()
+        local ancestryConn = Row.AncestryChanged:Connect(function()
+            if not Row.Parent then
+                for _, conn in ipairs(Connections) do
+                    if conn and conn.Disconnect then
+                        conn:Disconnect()
+                    end
+                end
             end
         end)
+        table.insert(Connections, ancestryConn)
+        table.insert(Library.Connections, ancestryConn)
     end
 
     function TabBase:AddButtonRow(text, btnText, callback)
@@ -533,7 +593,11 @@ function UI_Module.CreateMain(hubTitle)
         B.Font = Enum.Font.GothamBold
         B.TextSize = 16
         Instance.new("UICorner", B)
-        B.MouseButton1Click:Connect(callback)
+        
+        local clickConn = B.MouseButton1Click:Connect(function()
+            if callback then callback() end
+        end)
+        table.insert(Library.Connections, clickConn)
     end
 
     function TabBase:AddSlider(text, min, max, default, callback)
@@ -586,37 +650,41 @@ function UI_Module.CreateMain(hubTitle)
             local roundedVal = math.floor(val * 10) / 10
             SliderFill.Size = UDim2.new(perc, 0, 1, 0)
             T.Text = text .. ": " .. roundedVal
-            callback(roundedVal)
+            if callback then callback(roundedVal) end
         end
 
         local dragging = false
-        SliderBack.InputBegan:Connect(function(input)
+        local sliderBackConn = SliderBack.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
                 _G.IsDraggingSlider = true
                 UpdateFromMouse(input.Position.X)
             end
         end)
+        table.insert(Library.Connections, sliderBackConn)
         
-        SliderKnob.InputBegan:Connect(function(input)
+        local sliderKnobConn = SliderKnob.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
                 _G.IsDraggingSlider = true
             end
         end)
+        table.insert(Library.Connections, sliderKnobConn)
         
-        UserInputService.InputEnded:Connect(function(input)
+        local inputEndedConn = UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = false
                 _G.IsDraggingSlider = false
             end
         end)
+        table.insert(Library.Connections, inputEndedConn)
         
-        UserInputService.InputChanged:Connect(function(input)
+        local inputChangedConn = UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 UpdateFromMouse(input.Position.X)
             end
         end)
+        table.insert(Library.Connections, inputChangedConn)
     end
 
     function TabBase:AddToggleButton(text, default, callback)
@@ -667,7 +735,7 @@ function UI_Module.CreateMain(hubTitle)
         StatusLabel.TextSize = 14
         StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-        ToggleBtn.MouseButton1Click:Connect(function()
+        local toggleClickConn = ToggleBtn.MouseButton1Click:Connect(function()
             Toggled = not Toggled
             local targetColor = Toggled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
             local targetText = Toggled and "ON" or "OFF"
@@ -675,8 +743,9 @@ function UI_Module.CreateMain(hubTitle)
             TweenService:Create(Dot, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
             TweenService:Create(StatusLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {TextColor3 = targetColor}):Play()
             StatusLabel.Text = targetText
-            callback(Toggled)
+            if callback then callback(Toggled) end
         end)
+        table.insert(Library.Connections, toggleClickConn)
     end
 
     function Library:CreateTab(name, isSettings)
@@ -705,13 +774,15 @@ function UI_Module.CreateMain(hubTitle)
         local List = Instance.new("UIListLayout", Page)
         List.Padding = UDim.new(0, 10)
         List.SortOrder = Enum.SortOrder.LayoutOrder
-        List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        
+        local listSizeConn = List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             Page.CanvasSize = UDim2.new(0, 0, 0, List.AbsoluteContentSize.Y)
         end)
+        table.insert(Library.Connections, listSizeConn)
 
         NewTab.Page = Page
 
-        TabBtn.MouseButton1Click:Connect(function()
+        local tabClickConn = TabBtn.MouseButton1Click:Connect(function()
             for _, p in pairs(PagesFolder:GetChildren()) do 
                 p.Visible = false 
             end
@@ -723,6 +794,7 @@ function UI_Module.CreateMain(hubTitle)
             TabBtn:SetAttribute("Active", true)
             TweenService:Create(TabBtn, TweenInfo.new(0.3), {BackgroundColor3 = CurrentTheme.Accent, TextColor3 = CurrentTheme.BtnText}):Play()
         end)
+        table.insert(Library.Connections, tabClickConn)
 
         if not isSettings and #Library.TabButtons == 1 then
             Page.Visible = true
@@ -738,6 +810,14 @@ function UI_Module.CreateMain(hubTitle)
         Settings:AddButtonRow(name, "Set", function() 
             ApplyTheme(data, name) 
         end)
+    end
+
+    -- Добавляем метод для принудительной очистки
+    function Library:Destroy()
+        CleanupAllConnections()
+        if ScreenGui then
+            ScreenGui:Destroy()
+        end
     end
 
     return Library
