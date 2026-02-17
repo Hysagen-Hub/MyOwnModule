@@ -165,7 +165,7 @@ function UI_Module.CreateMain(hubTitle)
     local CloseButton = Instance.new("TextButton", Main)
     CloseButton.Name = "CloseButton"
     CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Position = UDim2.new(1, 0, 0, 0)
+    CloseButton.Position = UDim2.new(0, 0, 0, 0)
     CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     CloseButton.Text = "X"
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
