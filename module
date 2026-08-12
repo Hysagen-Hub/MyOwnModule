@@ -1,5 +1,6 @@
 --[[
-    HYSAGEN UI MODULE v5 – идеальные углы, прозрачная обводка, куча тем.
+    HYSAGEN UI MODULE v6 – идеальные углы, прозрачная обводка, 15 тем.
+    Все углы главного окна скруглены (радиус 12), дочерние элементы обрезаются по форме.
 ]]
 
 local UI_Module = {}
@@ -62,7 +63,7 @@ function UI_Module.CreateMain(hubTitle)
     local TabBase = {}
     TabBase.__index = TabBase
 
-    -- Расширенный набор тем (15 штук)
+    -- 15 тем
     local Themes = {
         ["Midnight"] = {
             Main = Color3.fromRGB(14, 14, 20),
@@ -225,25 +226,24 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
 
-    -- Главное окно (все углы скруглены)
+    -- Главное окно (все углы скруглены, обрезка включена)
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 660, 0, 460)
     Main.Position = UDim2.new(0.5, -330, 0.5, -230)
     Main.BackgroundColor3 = CurrentTheme.Main
     Main.BorderSizePixel = 0
-    Main.ClipsDescendants = true
-    -- Скругление всех углов
+    Main.ClipsDescendants = true  -- важно для обрезки дочерних элементов по форме
     local mainCorner = Instance.new("UICorner", Main)
-    mainCorner.CornerRadius = UDim.new(0, 12)
-    -- Обводка (прозрачная, как просили)
+    mainCorner.CornerRadius = UDim.new(0, 12)  -- скругление всех углов
+    -- Обводка (прозрачная)
     local border = Instance.new("UIStroke", Main)
     border.Thickness = 1.5
     border.Color = CurrentTheme.Stroke
-    border.Transparency = 0.4   -- заметная, но не яркая
+    border.Transparency = 0.4
 
-    -- Тень (отдельный фрейм под окном, чтобы не обрезалась)
-    local shadow = Instance.new("Frame", ScreenGui) -- теперь на уровне ScreenGui
+    -- Тень (на уровне ScreenGui, чтобы не обрезалась)
+    local shadow = Instance.new("Frame", ScreenGui)
     shadow.Name = "Shadow"
     shadow.Size = UDim2.new(0, 660 + 12, 0, 460 + 12)
     shadow.Position = UDim2.new(0.5, -330 - 6, 0.5, -230 - 6)
@@ -253,9 +253,8 @@ function UI_Module.CreateMain(hubTitle)
     shadow.ZIndex = -1
     local shadowCorner = Instance.new("UICorner", shadow)
     shadowCorner.CornerRadius = UDim.new(0, 16)
-    -- Чтобы тень двигалась вместе с окном, обновляем позицию при перемещении
-    -- Используем привязку к Main через изменение Position (но проще сделать отдельную функцию)
-    -- Сделаем так: при каждом изменении позиции Main обновляем и Shadow
+
+    -- Функция обновления позиции тени
     local function updateShadow()
         shadow.Position = UDim2.new(
             Main.Position.X.Scale,
@@ -265,27 +264,25 @@ function UI_Module.CreateMain(hubTitle)
         )
     end
     updateShadow()
-    -- Отслеживаем изменение позиции Main (через GetPropertyChangedSignal)
     local posConn = Main:GetPropertyChangedSignal("Position"):Connect(updateShadow)
     table.insert(Library.Connections, posConn)
-    -- Также при изменении размера
     local sizeConn = Main:GetPropertyChangedSignal("Size"):Connect(function()
         shadow.Size = UDim2.new(0, Main.Size.X.Offset + 12, 0, Main.Size.Y.Offset + 12)
         updateShadow()
     end)
     table.insert(Library.Connections, sizeConn)
 
-    -- Перетаскивание (для Main, но тень двигается автоматически через событие Position)
+    -- Перетаскивание
     local dragCons = MakeDraggable(Main)
     for _, c in ipairs(dragCons) do table.insert(Library.Connections, c) end
 
-    -- Верхняя панель (заголовок + кнопки) – без скруглений, чтобы вписаться в общее окно
+    -- Верхняя панель (без собственного скругления, обрезается Main)
     local TitleBar = Instance.new("Frame", Main)
     TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, 44)
     TitleBar.BackgroundColor3 = CurrentTheme.Sidebar
     TitleBar.BorderSizePixel = 0
-    -- Отделим нижнюю границу лёгкой линией (UIStroke)
+    -- Разделительная линия
     local titleBorder = Instance.new("UIStroke", TitleBar)
     titleBorder.Thickness = 1
     titleBorder.Color = CurrentTheme.Stroke
@@ -347,7 +344,7 @@ function UI_Module.CreateMain(hubTitle)
         ScreenGui:Destroy()
     end)
 
-    -- Боковая панель
+    -- Боковая панель (без скругления)
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 190, 1, -44)
