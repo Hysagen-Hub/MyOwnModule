@@ -1,8 +1,3 @@
---[[
-    HYSAGEN UI MODULE v6 – идеальные углы, прозрачная обводка, 15 тем.
-    Все углы главного окна скруглены (радиус 12), дочерние элементы корректно вписаны в форму.
-]]
-
 local UI_Module = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -12,7 +7,6 @@ local HttpService = game:GetService("HttpService")
 _G.IsDraggingSlider = false
 local THEME_FILE = "hysagen_ui_theme.txt"
 
--- Загрузка / сохранение темы
 local function loadSavedTheme()
     local success, result = pcall(function()
         return HttpService:JSONDecode(readfile(THEME_FILE))
@@ -26,7 +20,6 @@ local function saveTheme(themeName)
     pcall(function() writefile(THEME_FILE, HttpService:JSONEncode(settings)) end)
 end
 
--- Перетаскивание (защита от слайдеров)
 local function MakeDraggable(gui)
     local dragging = false
     local dragStart, startPos
@@ -62,8 +55,7 @@ function UI_Module.CreateMain(hubTitle)
     local Library = { TabButtons = {}, Connections = {} }
     local TabBase = {}
     TabBase.__index = TabBase
-
-    -- 15 тем
+    
     local Themes = {
         ["Midnight"] = {
             Main = Color3.fromRGB(14, 14, 20),
@@ -225,8 +217,7 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.Name = "HysagenUI"
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
-
-    -- Главное окно
+    
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 660, 0, 460)
@@ -236,14 +227,12 @@ function UI_Module.CreateMain(hubTitle)
     Main.ClipsDescendants = true
     local mainCorner = Instance.new("UICorner", Main)
     mainCorner.CornerRadius = UDim.new(0, 12)
-
-    -- Обводка главного окна
+    
     local border = Instance.new("UIStroke", Main)
     border.Thickness = 1.5
     border.Color = CurrentTheme.Stroke
     border.Transparency = 0.4
-
-    -- Тень
+    
     local shadow = Instance.new("Frame", ScreenGui)
     shadow.Name = "Shadow"
     shadow.Size = UDim2.new(0, 660 + 12, 0, 460 + 12)
@@ -254,8 +243,7 @@ function UI_Module.CreateMain(hubTitle)
     shadow.ZIndex = -1
     local shadowCorner = Instance.new("UICorner", shadow)
     shadowCorner.CornerRadius = UDim.new(0, 16)
-
-    -- Обновление позиции тени
+    
     local function updateShadow()
         shadow.Position = UDim2.new(
             Main.Position.X.Scale,
@@ -272,12 +260,10 @@ function UI_Module.CreateMain(hubTitle)
         updateShadow()
     end)
     table.insert(Library.Connections, sizeConn)
-
-    -- Перетаскивание
+    
     local dragCons = MakeDraggable(Main)
     for _, c in ipairs(dragCons) do table.insert(Library.Connections, c) end
-
-    -- Верхняя панель (скругляет верхний левый и верхний правый углы)
+    
     local TitleBar = Instance.new("Frame", Main)
     TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, 44)
@@ -285,22 +271,19 @@ function UI_Module.CreateMain(hubTitle)
     TitleBar.BorderSizePixel = 0
     local titleCorner = Instance.new("UICorner", TitleBar)
     titleCorner.CornerRadius = UDim.new(0, 12)
-
-    -- Заплатка для нижних углов TitleBar (чтобы они оставались прямыми)
+    
     local titleFix = Instance.new("Frame", TitleBar)
     titleFix.Name = "TitleBar"
     titleFix.Size = UDim2.new(1, 0, 0, 12)
     titleFix.Position = UDim2.new(0, 0, 1, -12)
     titleFix.BackgroundColor3 = CurrentTheme.Sidebar
     titleFix.BorderSizePixel = 0
-
-    -- Разделительная линия
+    
     local titleBorder = Instance.new("UIStroke", TitleBar)
     titleBorder.Thickness = 1
     titleBorder.Color = CurrentTheme.Stroke
     titleBorder.Transparency = 0.3
-
-    -- Заголовок
+    
     local titleLabel = Instance.new("TextLabel", TitleBar)
     titleLabel.Size = UDim2.new(0.7, 0, 1, 0)
     titleLabel.Position = UDim2.new(0.04, 0, 0, 0)
@@ -310,8 +293,7 @@ function UI_Module.CreateMain(hubTitle)
     titleLabel.TextSize = 18
     titleLabel.BackgroundTransparency = 1
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Кнопки управления
+    
     local function createControlButton(text, posX, color, clickFunc)
         local btn = Instance.new("TextButton", TitleBar)
         btn.Size = UDim2.new(0, 28, 0, 28)
@@ -355,8 +337,7 @@ function UI_Module.CreateMain(hubTitle)
         for _, c in ipairs(Library.Connections) do if c and c.Disconnect then c:Disconnect() end end
         ScreenGui:Destroy()
     end)
-
-    -- Боковая панель (скругляет нижний левый угол)
+    
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 190, 1, -44)
@@ -365,8 +346,7 @@ function UI_Module.CreateMain(hubTitle)
     Sidebar.BorderSizePixel = 0
     local sidebarCorner = Instance.new("UICorner", Sidebar)
     sidebarCorner.CornerRadius = UDim.new(0, 12)
-
-    -- Заплатки для верха и правой стороны Sidebar (убирают лишние внутренние скругления)
+    
     local sideFixTop = Instance.new("Frame", Sidebar)
     sideFixTop.Name = "Sidebar"
     sideFixTop.Size = UDim2.new(1, 0, 0, 12)
@@ -385,8 +365,7 @@ function UI_Module.CreateMain(hubTitle)
     sideBorder.Thickness = 1
     sideBorder.Color = CurrentTheme.Stroke
     sideBorder.Transparency = 0.3
-
-    -- Скролл для вкладок
+    
     local SidebarScroll = Instance.new("ScrollingFrame", Sidebar)
     SidebarScroll.Size = UDim2.new(1, -10, 1, -10)
     SidebarScroll.Position = UDim2.new(0, 5, 0, 5)
@@ -400,16 +379,14 @@ function UI_Module.CreateMain(hubTitle)
         SidebarScroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
     end)
     table.insert(Library.Connections, listSizeConn)
-
-    -- Страницы
+    
     local PagesFolder = Instance.new("Frame", Main)
     PagesFolder.Name = "Pages"
     PagesFolder.Size = UDim2.new(1, -200, 1, -54)
     PagesFolder.Position = UDim2.new(0, 195, 0, 50)
     PagesFolder.BackgroundTransparency = 1
     PagesFolder.ClipsDescendants = false
-
-    -- Применение темы
+    
     local function ApplyTheme(theme, themeName)
         CurrentTheme = theme
         local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quart)
@@ -446,8 +423,7 @@ function UI_Module.CreateMain(hubTitle)
         end
         if themeName then saveTheme(themeName) end
     end
-
-    -- Методы TabBase
+    
     function TabBase:AddLabel(text)
         self.Count = self.Count + 1
         local L = Instance.new("TextLabel", self.Page)
@@ -924,8 +900,7 @@ function UI_Module.CreateMain(hubTitle)
         end)
         table.insert(Library.Connections, click)
     end
-
-    -- Создание вкладок
+    
     function Library:CreateTab(name, isSettings)
         local NewTab = setmetatable({}, TabBase)
         NewTab.Count = 0
@@ -984,14 +959,12 @@ function UI_Module.CreateMain(hubTitle)
         end
         return NewTab
     end
-
-    -- Вкладка настроек тем
+    
     local Settings = Library:CreateTab("⚙️ Themes", true)
     for name, data in pairs(Themes) do
         Settings:AddButtonRow(name, "Apply", function() ApplyTheme(data, name) end)
     end
-
-    -- Метод Destroy
+    
     function Library:Destroy()
         for _, c in ipairs(Library.Connections) do if c and c.Disconnect then c:Disconnect() end end
         ScreenGui:Destroy()
