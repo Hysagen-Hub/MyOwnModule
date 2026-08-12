@@ -1,6 +1,6 @@
 --[[
     HYSAGEN UI MODULE v6 – идеальные углы, прозрачная обводка, 15 тем.
-    Все углы главного окна скруглены (радиус 12), дочерние элементы обрезаются по форме.
+    Все углы главного окна скруглены (радиус 12), дочерние элементы корректно вписаны в форму.
 ]]
 
 local UI_Module = {}
@@ -226,23 +226,24 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
 
-    -- Главное окно (все углы скруглены, обрезка включена)
+    -- Главное окно
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 660, 0, 460)
     Main.Position = UDim2.new(0.5, -330, 0.5, -230)
     Main.BackgroundColor3 = CurrentTheme.Main
     Main.BorderSizePixel = 0
-    Main.ClipsDescendants = true  -- важно для обрезки дочерних элементов по форме
+    Main.ClipsDescendants = true
     local mainCorner = Instance.new("UICorner", Main)
-    mainCorner.CornerRadius = UDim.new(0, 12)  -- скругление всех углов
-    -- Обводка (прозрачная)
+    mainCorner.CornerRadius = UDim.new(0, 12)
+
+    -- Обводка главного окна
     local border = Instance.new("UIStroke", Main)
     border.Thickness = 1.5
     border.Color = CurrentTheme.Stroke
     border.Transparency = 0.4
 
-    -- Тень (на уровне ScreenGui, чтобы не обрезалась)
+    -- Тень
     local shadow = Instance.new("Frame", ScreenGui)
     shadow.Name = "Shadow"
     shadow.Size = UDim2.new(0, 660 + 12, 0, 460 + 12)
@@ -254,7 +255,7 @@ function UI_Module.CreateMain(hubTitle)
     local shadowCorner = Instance.new("UICorner", shadow)
     shadowCorner.CornerRadius = UDim.new(0, 16)
 
-    -- Функция обновления позиции тени
+    -- Обновление позиции тени
     local function updateShadow()
         shadow.Position = UDim2.new(
             Main.Position.X.Scale,
@@ -276,12 +277,23 @@ function UI_Module.CreateMain(hubTitle)
     local dragCons = MakeDraggable(Main)
     for _, c in ipairs(dragCons) do table.insert(Library.Connections, c) end
 
-    -- Верхняя панель (без собственного скругления, обрезается Main)
+    -- Верхняя панель (скругляет верхний левый и верхний правый углы)
     local TitleBar = Instance.new("Frame", Main)
     TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, 44)
     TitleBar.BackgroundColor3 = CurrentTheme.Sidebar
     TitleBar.BorderSizePixel = 0
+    local titleCorner = Instance.new("UICorner", TitleBar)
+    titleCorner.CornerRadius = UDim.new(0, 12)
+
+    -- Заплатка для нижних углов TitleBar (чтобы они оставались прямыми)
+    local titleFix = Instance.new("Frame", TitleBar)
+    titleFix.Name = "TitleBar"
+    titleFix.Size = UDim2.new(1, 0, 0, 12)
+    titleFix.Position = UDim2.new(0, 0, 1, -12)
+    titleFix.BackgroundColor3 = CurrentTheme.Sidebar
+    titleFix.BorderSizePixel = 0
+
     -- Разделительная линия
     local titleBorder = Instance.new("UIStroke", TitleBar)
     titleBorder.Thickness = 1
@@ -344,13 +356,31 @@ function UI_Module.CreateMain(hubTitle)
         ScreenGui:Destroy()
     end)
 
-    -- Боковая панель (без скругления)
+    -- Боковая панель (скругляет нижний левый угол)
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 190, 1, -44)
     Sidebar.Position = UDim2.new(0, 0, 0, 44)
     Sidebar.BackgroundColor3 = CurrentTheme.Sidebar
     Sidebar.BorderSizePixel = 0
+    local sidebarCorner = Instance.new("UICorner", Sidebar)
+    sidebarCorner.CornerRadius = UDim.new(0, 12)
+
+    -- Заплатки для верха и правой стороны Sidebar (убирают лишние внутренние скругления)
+    local sideFixTop = Instance.new("Frame", Sidebar)
+    sideFixTop.Name = "Sidebar"
+    sideFixTop.Size = UDim2.new(1, 0, 0, 12)
+    sideFixTop.Position = UDim2.new(0, 0, 0, 0)
+    sideFixTop.BackgroundColor3 = CurrentTheme.Sidebar
+    sideFixTop.BorderSizePixel = 0
+
+    local sideFixRight = Instance.new("Frame", Sidebar)
+    sideFixRight.Name = "Sidebar"
+    sideFixRight.Size = UDim2.new(0, 12, 1, 0)
+    sideFixRight.Position = UDim2.new(1, -12, 0, 0)
+    sideFixRight.BackgroundColor3 = CurrentTheme.Sidebar
+    sideFixRight.BorderSizePixel = 0
+
     local sideBorder = Instance.new("UIStroke", Sidebar)
     sideBorder.Thickness = 1
     sideBorder.Color = CurrentTheme.Stroke
@@ -417,7 +447,7 @@ function UI_Module.CreateMain(hubTitle)
         if themeName then saveTheme(themeName) end
     end
 
-    -- Методы TabBase (без текстовых состояний у свитчей)
+    -- Методы TabBase
     function TabBase:AddLabel(text)
         self.Count = self.Count + 1
         local L = Instance.new("TextLabel", self.Page)
@@ -462,7 +492,6 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
-        -- Toggle switch (без текста)
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtn"
         ToggleBtn.Size = UDim2.new(0, 48, 0, 28)
@@ -486,7 +515,6 @@ function UI_Module.CreateMain(hubTitle)
         local dotCorner = Instance.new("UICorner", Dot)
         dotCorner.CornerRadius = UDim.new(1,0)
 
-        -- Bind кнопки
         local ToggleBindBtn = Instance.new("TextButton", Row)
         ToggleBindBtn.Name = "ToggleBindBtn"
         ToggleBindBtn.Size = UDim2.new(0, 40, 0, 26)
