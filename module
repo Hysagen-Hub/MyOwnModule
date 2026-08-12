@@ -1,5 +1,5 @@
 --[[
-    HYSAGEN UI MODULE v4 – идеальные углы, чистые свитчи, куча тем.
+    HYSAGEN UI MODULE v5 – идеальные углы, прозрачная обводка, куча тем.
 ]]
 
 local UI_Module = {}
@@ -164,7 +164,6 @@ function UI_Module.CreateMain(hubTitle)
             BtnText = Color3.fromRGB(40, 30, 0),
             Glow = Color3.fromRGB(220, 180, 0)
         },
-        -- НОВЫЕ ТЕМЫ
         ["Lavender"] = {
             Main = Color3.fromRGB(25, 20, 35),
             Sidebar = Color3.fromRGB(40, 30, 55),
@@ -226,44 +225,67 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
 
-    -- Главное окно (все углы скруглены, обрезка включена)
+    -- Главное окно (все углы скруглены)
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 660, 0, 460)
     Main.Position = UDim2.new(0.5, -330, 0.5, -230)
     Main.BackgroundColor3 = CurrentTheme.Main
     Main.BorderSizePixel = 0
-    Main.ClipsDescendants = true  -- <-- ВАЖНО: обрезаем всё по форме
+    Main.ClipsDescendants = true
+    -- Скругление всех углов
     local mainCorner = Instance.new("UICorner", Main)
     mainCorner.CornerRadius = UDim.new(0, 12)
-    -- Тень (отдельный фрейм под окном)
-    local shadow = Instance.new("Frame", Main)
-    shadow.Size = UDim2.new(1, 12, 1, 12)
-    shadow.Position = UDim2.new(0, -6, 0, -6)
+    -- Обводка (прозрачная, как просили)
+    local border = Instance.new("UIStroke", Main)
+    border.Thickness = 1.5
+    border.Color = CurrentTheme.Stroke
+    border.Transparency = 0.4   -- заметная, но не яркая
+
+    -- Тень (отдельный фрейм под окном, чтобы не обрезалась)
+    local shadow = Instance.new("Frame", ScreenGui) -- теперь на уровне ScreenGui
+    shadow.Name = "Shadow"
+    shadow.Size = UDim2.new(0, 660 + 12, 0, 460 + 12)
+    shadow.Position = UDim2.new(0.5, -330 - 6, 0.5, -230 - 6)
     shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
     shadow.BackgroundTransparency = 0.5
     shadow.BorderSizePixel = 0
     shadow.ZIndex = -1
-    shadow.ClipsDescendants = false
     local shadowCorner = Instance.new("UICorner", shadow)
     shadowCorner.CornerRadius = UDim.new(0, 16)
-    -- Рамка
-    local border = Instance.new("UIStroke", Main)
-    border.Thickness = 1
-    border.Color = CurrentTheme.Stroke
-    border.Transparency = 0.3
+    -- Чтобы тень двигалась вместе с окном, обновляем позицию при перемещении
+    -- Используем привязку к Main через изменение Position (но проще сделать отдельную функцию)
+    -- Сделаем так: при каждом изменении позиции Main обновляем и Shadow
+    local function updateShadow()
+        shadow.Position = UDim2.new(
+            Main.Position.X.Scale,
+            Main.Position.X.Offset - 6,
+            Main.Position.Y.Scale,
+            Main.Position.Y.Offset - 6
+        )
+    end
+    updateShadow()
+    -- Отслеживаем изменение позиции Main (через GetPropertyChangedSignal)
+    local posConn = Main:GetPropertyChangedSignal("Position"):Connect(updateShadow)
+    table.insert(Library.Connections, posConn)
+    -- Также при изменении размера
+    local sizeConn = Main:GetPropertyChangedSignal("Size"):Connect(function()
+        shadow.Size = UDim2.new(0, Main.Size.X.Offset + 12, 0, Main.Size.Y.Offset + 12)
+        updateShadow()
+    end)
+    table.insert(Library.Connections, sizeConn)
 
-    -- Перетаскивание
+    -- Перетаскивание (для Main, но тень двигается автоматически через событие Position)
     local dragCons = MakeDraggable(Main)
     for _, c in ipairs(dragCons) do table.insert(Library.Connections, c) end
 
-    -- Верхняя панель (заголовок + кнопки)
+    -- Верхняя панель (заголовок + кнопки) – без скруглений, чтобы вписаться в общее окно
     local TitleBar = Instance.new("Frame", Main)
     TitleBar.Name = "TitleBar"
     TitleBar.Size = UDim2.new(1, 0, 0, 44)
     TitleBar.BackgroundColor3 = CurrentTheme.Sidebar
     TitleBar.BorderSizePixel = 0
-    -- отделим нижнюю границу
+    -- Отделим нижнюю границу лёгкой линией (UIStroke)
     local titleBorder = Instance.new("UIStroke", TitleBar)
     titleBorder.Thickness = 1
     titleBorder.Color = CurrentTheme.Stroke
@@ -358,7 +380,7 @@ function UI_Module.CreateMain(hubTitle)
     PagesFolder.Size = UDim2.new(1, -200, 1, -54)
     PagesFolder.Position = UDim2.new(0, 195, 0, 50)
     PagesFolder.BackgroundTransparency = 1
-    PagesFolder.ClipsDescendants = false -- не нужно, т.к. Main обрезает
+    PagesFolder.ClipsDescendants = false
 
     -- Применение темы
     local function ApplyTheme(theme, themeName)
@@ -368,7 +390,9 @@ function UI_Module.CreateMain(hubTitle)
             if obj.Name == "MainFrame" then
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
                 local b = obj:FindFirstChildWhichIsA("UIStroke")
-                if b and b.Thickness == 1 then TweenService:Create(b, tInfo, {Color = theme.Stroke}):Play() end
+                if b and b.Thickness == 1.5 then
+                    TweenService:Create(b, tInfo, {Color = theme.Stroke, Transparency = 0.4}):Play()
+                end
             elseif obj.Name == "Sidebar" or obj.Name == "TitleBar" then
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Sidebar}):Play()
                 local s = obj:FindFirstChildWhichIsA("UIStroke")
@@ -396,7 +420,7 @@ function UI_Module.CreateMain(hubTitle)
         if themeName then saveTheme(themeName) end
     end
 
-    -- Методы TabBase (убраны текстовые состояния у свитчей)
+    -- Методы TabBase (без текстовых состояний у свитчей)
     function TabBase:AddLabel(text)
         self.Count = self.Count + 1
         local L = Instance.new("TextLabel", self.Page)
