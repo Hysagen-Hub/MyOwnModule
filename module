@@ -1,7 +1,7 @@
 --[[
     ✦ HYPERION UI ✦
     Модуль для создания красивых скриптовых интерфейсов.
-    Вдохновлён современным дизайном и анимациями.
+    Исправлена ошибка с readfile/writefile.
 ]]
 
 local UI = {}
@@ -12,19 +12,27 @@ local HttpService = game:GetService("HttpService")
 
 local THEME_FILE = "hyperion_theme.json"
 
--- ──────────────── СОХРАНЕНИЕ ТЕМЫ ────────────────
+-- ─── БЕЗОПАСНАЯ РАБОТА С ФАЙЛАМИ ───
+local function hasFileAPI()
+    return type(readfile) == "function" and type(writefile) == "function"
+end
+
 local function loadTheme()
-    local ok, data = pcall(function() return HttpService:JSONDecode(readfile(THEME_FILE)) end)
+    if not hasFileAPI() then return nil end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(THEME_FILE))
+    end)
     return ok and data and data.theme or nil
 end
 
 local function saveTheme(name)
+    if not hasFileAPI() then return end
     pcall(function()
         writefile(THEME_FILE, HttpService:JSONEncode({ theme = name }))
     end)
 end
 
--- ──────────────── ПАЛИТРЫ ТЕМ ────────────────
+-- ─── ПАЛИТРЫ ТЕМ ───
 local THEMES = {
     ["Nightfall"] = {
         bg = Color3.fromRGB(10, 10, 18),
@@ -91,7 +99,7 @@ local THEMES = {
 local currentThemeName = loadTheme() or "Nightfall"
 local currentTheme = THEMES[currentThemeName] or THEMES["Nightfall"]
 
--- ──────────────── ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ────────────────
+-- ─── ПЕРЕТАСКИВАНИЕ ───
 local function makeDraggable(gui)
     local drag = false
     local start, pos
@@ -124,7 +132,7 @@ local function makeDraggable(gui)
     return conns
 end
 
--- ──────────────── ГЛАВНЫЙ КОНСТРУКТОР ────────────────
+-- ─── ГЛАВНЫЙ КОНСТРУКТОР ───
 function UI.Create(title)
     local Library = { Tabs = {}, Buttons = {}, Connections = {} }
     local TabBase = {}
@@ -145,7 +153,7 @@ function UI.Create(title)
     main.BackgroundTransparency = 0.3
     main.BorderSizePixel = 0
 
-    -- Размытие фона (эффект стекла)
+    -- Размытие фона
     local blur = Instance.new("BlurEffect", main)
     blur.Size = 20
 
