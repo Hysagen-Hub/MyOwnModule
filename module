@@ -1,6 +1,5 @@
 --[[
-    HYSAGEN UI MODULE v3 – красиво, чисто, без косяков.
-    Дизайн: тёмный фон, акцентный неон, мягкие тени, плавные анимации.
+    HYSAGEN UI MODULE v4 – идеальные углы, чистые свитчи, куча тем.
 ]]
 
 local UI_Module = {}
@@ -8,7 +7,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
 
 _G.IsDraggingSlider = false
 local THEME_FILE = "hysagen_ui_theme.txt"
@@ -59,13 +57,12 @@ local function MakeDraggable(gui)
     return { began, ended, changed }
 end
 
--- Главная функция
 function UI_Module.CreateMain(hubTitle)
     local Library = { TabButtons = {}, Connections = {} }
     local TabBase = {}
     TabBase.__index = TabBase
 
-    -- Тематические цвета (без прозрачности, всё чётко)
+    -- Расширенный набор тем (15 штук)
     local Themes = {
         ["Midnight"] = {
             Main = Color3.fromRGB(14, 14, 20),
@@ -166,6 +163,57 @@ function UI_Module.CreateMain(hubTitle)
             Secondary = Color3.fromRGB(46, 42, 24),
             BtnText = Color3.fromRGB(40, 30, 0),
             Glow = Color3.fromRGB(220, 180, 0)
+        },
+        -- НОВЫЕ ТЕМЫ
+        ["Lavender"] = {
+            Main = Color3.fromRGB(25, 20, 35),
+            Sidebar = Color3.fromRGB(40, 30, 55),
+            Stroke = Color3.fromRGB(100, 70, 140),
+            Accent = Color3.fromRGB(200, 150, 255),
+            Text = Color3.fromRGB(235, 220, 255),
+            Secondary = Color3.fromRGB(50, 40, 70),
+            BtnText = Color3.fromRGB(255, 255, 255),
+            Glow = Color3.fromRGB(160, 100, 220)
+        },
+        ["Crimson"] = {
+            Main = Color3.fromRGB(30, 8, 8),
+            Sidebar = Color3.fromRGB(50, 12, 12),
+            Stroke = Color3.fromRGB(140, 30, 30),
+            Accent = Color3.fromRGB(255, 80, 80),
+            Text = Color3.fromRGB(255, 210, 210),
+            Secondary = Color3.fromRGB(65, 20, 20),
+            BtnText = Color3.fromRGB(255, 255, 255),
+            Glow = Color3.fromRGB(220, 40, 40)
+        },
+        ["Forest"] = {
+            Main = Color3.fromRGB(10, 25, 12),
+            Sidebar = Color3.fromRGB(16, 38, 18),
+            Stroke = Color3.fromRGB(40, 110, 50),
+            Accent = Color3.fromRGB(80, 255, 120),
+            Text = Color3.fromRGB(200, 255, 210),
+            Secondary = Color3.fromRGB(22, 50, 26),
+            BtnText = Color3.fromRGB(0, 40, 10),
+            Glow = Color3.fromRGB(50, 200, 80)
+        },
+        ["Sunset"] = {
+            Main = Color3.fromRGB(40, 20, 10),
+            Sidebar = Color3.fromRGB(60, 30, 16),
+            Stroke = Color3.fromRGB(180, 80, 30),
+            Accent = Color3.fromRGB(255, 160, 40),
+            Text = Color3.fromRGB(255, 230, 200),
+            Secondary = Color3.fromRGB(75, 40, 22),
+            BtnText = Color3.fromRGB(255, 255, 255),
+            Glow = Color3.fromRGB(220, 120, 20)
+        },
+        ["Arctic"] = {
+            Main = Color3.fromRGB(20, 30, 45),
+            Sidebar = Color3.fromRGB(30, 45, 65),
+            Stroke = Color3.fromRGB(80, 120, 180),
+            Accent = Color3.fromRGB(100, 220, 255),
+            Text = Color3.fromRGB(210, 240, 255),
+            Secondary = Color3.fromRGB(40, 60, 80),
+            BtnText = Color3.fromRGB(255, 255, 255),
+            Glow = Color3.fromRGB(60, 180, 240)
         }
     }
 
@@ -178,23 +226,25 @@ function UI_Module.CreateMain(hubTitle)
     ScreenGui.ResetOnSpawn = false
     Library.ScreenGui = ScreenGui
 
-    -- Главное окно (непрозрачное, с тенью)
+    -- Главное окно (все углы скруглены, обрезка включена)
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 660, 0, 460)
     Main.Position = UDim2.new(0.5, -330, 0.5, -230)
     Main.BackgroundColor3 = CurrentTheme.Main
     Main.BorderSizePixel = 0
+    Main.ClipsDescendants = true  -- <-- ВАЖНО: обрезаем всё по форме
     local mainCorner = Instance.new("UICorner", Main)
     mainCorner.CornerRadius = UDim.new(0, 12)
-    -- Тень (UIStroke с большим радиусом размытия не поддерживается, поэтому используем прозрачный фон и дополнительный фрейм)
+    -- Тень (отдельный фрейм под окном)
     local shadow = Instance.new("Frame", Main)
     shadow.Size = UDim2.new(1, 12, 1, 12)
     shadow.Position = UDim2.new(0, -6, 0, -6)
     shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
-    shadow.BackgroundTransparency = 0.6
+    shadow.BackgroundTransparency = 0.5
     shadow.BorderSizePixel = 0
     shadow.ZIndex = -1
+    shadow.ClipsDescendants = false
     local shadowCorner = Instance.new("UICorner", shadow)
     shadowCorner.CornerRadius = UDim.new(0, 16)
     -- Рамка
@@ -213,13 +263,11 @@ function UI_Module.CreateMain(hubTitle)
     TitleBar.Size = UDim2.new(1, 0, 0, 44)
     TitleBar.BackgroundColor3 = CurrentTheme.Sidebar
     TitleBar.BorderSizePixel = 0
-    local titleCorner = Instance.new("UICorner", TitleBar)
-    titleCorner.CornerRadius = UDim.new(0, 12) -- скруглим только верх
-    -- Отделим нижнюю границу
+    -- отделим нижнюю границу
     local titleBorder = Instance.new("UIStroke", TitleBar)
     titleBorder.Thickness = 1
     titleBorder.Color = CurrentTheme.Stroke
-    titleBorder.Transparency = 0.4
+    titleBorder.Transparency = 0.3
 
     -- Заголовок
     local titleLabel = Instance.new("TextLabel", TitleBar)
@@ -284,8 +332,6 @@ function UI_Module.CreateMain(hubTitle)
     Sidebar.Position = UDim2.new(0, 0, 0, 44)
     Sidebar.BackgroundColor3 = CurrentTheme.Sidebar
     Sidebar.BorderSizePixel = 0
-    local sideCorner = Instance.new("UICorner", Sidebar)
-    sideCorner.CornerRadius = UDim.new(0, 0) -- углы скроем
     local sideBorder = Instance.new("UIStroke", Sidebar)
     sideBorder.Thickness = 1
     sideBorder.Color = CurrentTheme.Stroke
@@ -312,12 +358,12 @@ function UI_Module.CreateMain(hubTitle)
     PagesFolder.Size = UDim2.new(1, -200, 1, -54)
     PagesFolder.Position = UDim2.new(0, 195, 0, 50)
     PagesFolder.BackgroundTransparency = 1
+    PagesFolder.ClipsDescendants = false -- не нужно, т.к. Main обрезает
 
     -- Применение темы
     local function ApplyTheme(theme, themeName)
         CurrentTheme = theme
         local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quart)
-        -- Обновляем цвета всех элементов
         for _, obj in pairs(ScreenGui:GetDescendants()) do
             if obj.Name == "MainFrame" then
                 TweenService:Create(obj, tInfo, {BackgroundColor3 = theme.Main}):Play()
@@ -350,7 +396,7 @@ function UI_Module.CreateMain(hubTitle)
         if themeName then saveTheme(themeName) end
     end
 
-    -- Методы TabBase
+    -- Методы TabBase (убраны текстовые состояния у свитчей)
     function TabBase:AddLabel(text)
         self.Count = self.Count + 1
         local L = Instance.new("TextLabel", self.Page)
@@ -395,7 +441,7 @@ function UI_Module.CreateMain(hubTitle)
         L.BackgroundTransparency = 1
         L.TextXAlignment = Enum.TextXAlignment.Left
 
-        -- Toggle switch
+        -- Toggle switch (без текста)
         local ToggleBtn = Instance.new("TextButton", Row)
         ToggleBtn.Name = "ToggleBtn"
         ToggleBtn.Size = UDim2.new(0, 48, 0, 28)
@@ -418,16 +464,6 @@ function UI_Module.CreateMain(hubTitle)
         Dot.BorderSizePixel = 0
         local dotCorner = Instance.new("UICorner", Dot)
         dotCorner.CornerRadius = UDim.new(1,0)
-
-        local StatusLabel = Instance.new("TextLabel", Row)
-        StatusLabel.Size = UDim2.new(0, 36, 1, 0)
-        StatusLabel.Position = UDim2.new(0.46, 0, 0, 0)
-        StatusLabel.BackgroundTransparency = 1
-        StatusLabel.Text = Toggled and "ON" or "OFF"
-        StatusLabel.TextColor3 = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
-        StatusLabel.Font = Enum.Font.GothamBold
-        StatusLabel.TextSize = 13
-        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
         -- Bind кнопки
         local ToggleBindBtn = Instance.new("TextButton", Row)
@@ -459,11 +495,8 @@ function UI_Module.CreateMain(hubTitle)
             Toggled = state
             local targetColor = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(70,70,80)
             local dotPos = Toggled and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)
-            local statusColor = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
             TweenService:Create(ToggleBtn, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
             TweenService:Create(Dot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = dotPos}):Play()
-            TweenService:Create(StatusLabel, TweenInfo.new(0.25), {TextColor3 = statusColor}):Play()
-            StatusLabel.Text = Toggled and "ON" or "OFF"
             if callback then callback(Toggled) end
         end
 
@@ -832,25 +865,12 @@ function UI_Module.CreateMain(hubTitle)
         local dotCorner = Instance.new("UICorner", Dot)
         dotCorner.CornerRadius = UDim.new(1,0)
 
-        local StatusLabel = Instance.new("TextLabel", Row)
-        StatusLabel.Size = UDim2.new(0, 36, 1, 0)
-        StatusLabel.Position = UDim2.new(0.72, 0, 0, 0)
-        StatusLabel.BackgroundTransparency = 1
-        StatusLabel.Text = Toggled and "ON" or "OFF"
-        StatusLabel.TextColor3 = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
-        StatusLabel.Font = Enum.Font.GothamBold
-        StatusLabel.TextSize = 13
-        StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
         local click = ToggleBtn.MouseButton1Click:Connect(function()
             Toggled = not Toggled
             local targetColor = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(70,70,80)
             local dotPos = Toggled and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)
-            local statusColor = Toggled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
             TweenService:Create(ToggleBtn, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {BackgroundColor3 = targetColor}):Play()
             TweenService:Create(Dot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = dotPos}):Play()
-            TweenService:Create(StatusLabel, TweenInfo.new(0.25), {TextColor3 = statusColor}):Play()
-            StatusLabel.Text = Toggled and "ON" or "OFF"
             if callback then callback(Toggled) end
         end)
         table.insert(Library.Connections, click)
